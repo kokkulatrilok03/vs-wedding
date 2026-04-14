@@ -177,7 +177,6 @@ function App() {
     return Number.isFinite(raw) ? Math.min(Math.max(raw, 0), 1) : DEFAULT_MUSIC_VOLUME
   })
   const [isMuted, setIsMuted] = useState(false)
-  const [musicError, setMusicError] = useState('')
   const [musicSourceIndex, setMusicSourceIndex] = useState(0)
 
   const audioRef = useRef(null)
@@ -322,7 +321,6 @@ function App() {
       audioRef.current.src = MUSIC_SOURCES[sourceIndex]
       audioRef.current.load()
       try {
-        setMusicError('')
         audioRef.current.volume = 0
         audioRef.current.muted = false
         await audioRef.current.play()
@@ -344,9 +342,7 @@ function App() {
       }
     }
     try {
-      setMusicError('')
       setIsMusicPlaying(false)
-      setMusicError('Unable to play music now. Please try again in a few seconds.')
       if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'paused')
     } catch {
       // no-op
@@ -661,11 +657,6 @@ function App() {
             </button>
           </div>
         </nav>
-        {musicError && (
-          <p className="pointer-events-auto mt-2 rounded-full bg-[#fff4fa]/95 px-3 py-1 text-center text-xs text-[#a32967] shadow-sm">
-            {musicError}
-          </p>
-        )}
       </motion.header>
       )}
 
