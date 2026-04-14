@@ -1,0 +1,223 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+  --font-handwritten: "Great Vibes", cursive;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: linear-gradient(180deg, #fff1f7 0%, #ffe8f2 100%);
+  color: #5b2740;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  min-height: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.section-card {
+  border: 1px solid rgba(255, 143, 188, 0.25);
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 18px rgba(145, 41, 93, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 12px 24px rgba(145, 41, 93, 0.14);
+}
+
+.section-title {
+  text-align: center;
+  color: #7d2b54;
+  font-family: var(--font-serif);
+  letter-spacing: 0.04em;
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  font-weight: 500;
+}
+
+@media (min-width: 768px) {
+  .section-card {
+    padding: 2rem;
+  }
+}
+
+/* Luxury nav: underline grows from center */
+.nav-pill-link {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-pill-link::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: center;
+  background: linear-gradient(90deg, transparent, #ff5ea1, transparent);
+  transition: transform 0.35s ease;
+  border-radius: 999px;
+}
+
+.nav-pill-link:hover::after,
+.nav-pill-link.is-active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.font-handwritten {
+  font-family: var(--font-handwritten);
+}
+
+.petals-layer::before,
+.petals-layer::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background-image:
+    radial-gradient(circle, rgba(244, 213, 141, 0.42) 0 5px, transparent 7px),
+    radial-gradient(circle, rgba(255, 247, 220, 0.45) 0 4px, transparent 6px),
+    radial-gradient(circle, rgba(212, 175, 55, 0.35) 0 6px, transparent 9px);
+  background-size: 180px 180px, 220px 220px, 260px 260px;
+  animation: petalsFloat 22s linear infinite;
+}
+
+.petals-layer::after {
+  animation-duration: 30s;
+  opacity: 0.65;
+}
+
+@keyframes petalsFloat {
+  0% {
+    transform: translateY(-3%) translateX(0);
+  }
+  50% {
+    transform: translateY(3%) translateX(2%);
+  }
+  100% {
+    transform: translateY(-3%) translateX(0);
+  }
+}
+
+/* Floating hearts (theme) */
+.hearts-float {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.hearts-float span {
+  position: absolute;
+  color: #f283cd;
+  text-shadow: 0 0 10px rgba(185, 56, 161, 0.6);
+  font-size: 26px;
+  animation: heartRise linear infinite;
+  will-change: transform, opacity;
+  opacity: 0.8;
+}
+
+.heart-burst {
+  position: relative;
+  height: 0;
+}
+
+.heart-burst span {
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  animation: burstUp 900ms ease-out forwards;
+}
+
+.heart-burst span:nth-child(1) { transform: translateX(-70px); animation-delay: 0ms; }
+.heart-burst span:nth-child(2) { transform: translateX(-30px); animation-delay: 60ms; }
+.heart-burst span:nth-child(3) { transform: translateX(0); animation-delay: 120ms; }
+.heart-burst span:nth-child(4) { transform: translateX(30px); animation-delay: 180ms; }
+.heart-burst span:nth-child(5) { transform: translateX(70px); animation-delay: 240ms; }
+
+@keyframes burstUp {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-42px) scale(1.2);
+  }
+}
+
+@keyframes heartRise {
+  0% {
+    transform: translateY(115vh) translateX(0) rotate(0deg) scale(0.95);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  45% {
+    transform: translateY(45vh) translateX(10px) rotate(8deg) scale(1.06);
+  }
+  72% {
+    transform: translateY(12vh) translateX(-12px) rotate(-6deg) scale(1);
+  }
+  92% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-22vh) translateX(8px) rotate(12deg) scale(0.92);
+    opacity: 0;
+  }
+}
+
+/* Romantic photo frame */
+.heart-photo-wrap {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  max-width: 100%;
+  margin-inline: auto;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: #fff8fc;
+  border: 3px solid rgba(255, 132, 181, 0.5);
+  box-shadow: 0 16px 30px rgba(166, 45, 107, 0.2);
+}
+
+.heart-photo-wrap img {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  display: block;
+}
+
+.heart-photo-wrap::after {
+  content: "❤";
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  color: #ff5ea1;
+  font-size: 1.1rem;
+  text-shadow: 0 0 10px rgba(255, 94, 161, 0.5);
+}
+
+.section-card-heart {
+  position: relative;
+}
