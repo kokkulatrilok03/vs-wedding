@@ -41,27 +41,32 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/blessings', (req, res) => {
   if (!requireSupabase(res)) return
   const clientId = getClientId(req)
+  const page = Math.max(1, Number.parseInt(String(req.query.page ?? '1'), 10) || 1)
+  const limit = Math.min(100, Math.max(1, Number.parseInt(String(req.query.limit ?? '20'), 10) || 20))
+  const start = (page - 1) * limit
+  const end = start + limit - 1
   supabase
     .from('blessings')
-    .select('id,name,message,author_id,created_at')
+    .select('id,name,message,author_id,created_at', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .limit(100)
-    .then(({ data, error }) => {
+    .range(start, end)
+    .then(({ data, error, count }) => {
       if (error) {
         res.status(500).json({ error: 'Failed to load blessings' })
         return
       }
 
       const rows = Array.isArray(data) ? data : []
-      res.json(
-        rows.map((row) => ({
+      const items = rows.map((row) => ({
           id: row.id,
           name: row.name,
           message: row.message,
           createdAt: row.created_at,
           editable: Boolean(clientId) && row.author_id === clientId,
-        })),
-      )
+        }))
+      const total = Number.isFinite(count) ? count : items.length
+      const hasMore = page * limit < total
+      res.json({ items, page, limit, total, hasMore })
     })
 })
 

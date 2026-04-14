@@ -90,6 +90,7 @@ const OWNED_BLESSINGS_STORAGE_KEY = 'wedding_owned_blessing_ids'
 const MUSIC_PREF_KEY = 'wedding_music_pref'
 const MUSIC_VOLUME_KEY = 'wedding_music_volume'
 const DEFAULT_MUSIC_VOLUME = 1
+const BLESSINGS_PAGE_SIZE = 20
 const MUSIC_SOURCES = [
   '/music/atlasaudio-piano-romantic-510293.mp3',
 ]
@@ -156,6 +157,9 @@ function App() {
   const [clientId] = useState(() => getClientId())
   const [ownedBlessingIds, setOwnedBlessingIds] = useState(() => getOwnedBlessingIds())
   const [isBlessingsLoading, setIsBlessingsLoading] = useState(true)
+  const [isLoadingMoreBlessings, setIsLoadingMoreBlessings] = useState(false)
+  const [hasMoreBlessings, setHasMoreBlessings] = useState(false)
+  const [blessingsPage, setBlessingsPage] = useState(1)
   const [blessingsError, setBlessingsError] = useState('')
   const [isSubmittingBlessing, setIsSubmittingBlessing] = useState(false)
   const [editingBlessingId, setEditingBlessingId] = useState(null)
@@ -276,24 +280,56 @@ function App() {
     }
   }, [])
 
-  useEffect(() => {
-    const fetchBlessings = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/blessings`, {
-          headers: { 'X-Client-Id': clientId },
-        })
-        if (!response.ok) throw new Error('Failed to fetch blessings')
-        const rows = await response.json()
-        setBlessings(Array.isArray(rows) && rows.length ? rows : [])
-      } catch {
+  const fetchBlessings = useCallback(async (page = 1, append = false) => {
+    if (append) {
+      setIsLoadingMoreBlessings(true)
+    } else {
+      setIsBlessingsLoading(true)
+    }
+    try {
+      const response = await fetch(`${API_BASE}/blessings?page=${page}&limit=${BLESSINGS_PAGE_SIZE}`, {
+        headers: { 'X-Client-Id': clientId },
+      })
+      if (!response.ok) throw new Error('Failed to fetch blessings')
+      const payload = await response.json()
+      const rows = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.items)
+          ? payload.items
+          : []
+      setBlessings((prev) => {
+        if (!append) return rows
+        const existingIds = new Set(prev.map((item) => item.id))
+        const nextRows = rows.filter((item) => !existingIds.has(item.id))
+        return [...prev, ...nextRows]
+      })
+      setBlessingsPage(page)
+      if (Array.isArray(payload?.items)) {
+        setHasMoreBlessings(Boolean(payload.hasMore))
+      } else {
+        setHasMoreBlessings(rows.length === BLESSINGS_PAGE_SIZE)
+      }
+      setBlessingsError('')
+    } catch {
+      if (!append) {
         setBlessings(initialBlessings)
+        setHasMoreBlessings(false)
         setBlessingsError('Unable to load latest blessings. Showing sample blessings.')
-      } finally {
+      } else {
+        setBlessingsError('Unable to load more blessings right now. Please try again.')
+      }
+    } finally {
+      if (append) {
+        setIsLoadingMoreBlessings(false)
+      } else {
         setIsBlessingsLoading(false)
       }
     }
-    fetchBlessings()
   }, [clientId])
+
+  useEffect(() => {
+    fetchBlessings(1, false)
+  }, [fetchBlessings])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -441,6 +477,11 @@ function App() {
     setEditingBlessingId(entry.id ?? null)
     setBlessingName(entry.name ?? '')
     setBlessingMessage(entry.message ?? '')
+  }
+
+  const loadMoreBlessings = async () => {
+    if (isLoadingMoreBlessings || isBlessingsLoading || !hasMoreBlessings) return
+    await fetchBlessings(blessingsPage + 1, true)
   }
 
   return (
@@ -909,6 +950,18 @@ function App() {
               )
             })}
           </div>
+          {hasMoreBlessings && (
+            <div className="mt-6 text-center">
+              <button
+                className="rounded-full border border-[#ff8fbc80] bg-white px-6 py-2 font-semibold text-[#d63384] transition duration-300 hover:bg-[#fff3f9] hover:text-[#ff5ea1] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isLoadingMoreBlessings}
+                onClick={loadMoreBlessings}
+                type="button"
+              >
+                {isLoadingMoreBlessings ? 'Loading...' : 'Load More Blessings'}
+              </button>
+            </div>
+          )}
         </motion.section>
 
         <motion.section
