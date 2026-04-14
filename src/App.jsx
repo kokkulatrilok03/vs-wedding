@@ -88,7 +88,7 @@ const floatingHearts = [
   { left: '94%', size: '27px', duration: '16s', delay: '2.9s' },
 ]
 
-const API_BASE = '/api'
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 const CLIENT_ID_STORAGE_KEY = 'wedding_client_id'
 const OWNED_BLESSINGS_STORAGE_KEY = 'wedding_owned_blessing_ids'
 const MUSIC_PREF_KEY = 'wedding_music_pref'
