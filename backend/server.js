@@ -3,13 +3,21 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import cors from 'cors'
-import { db } from './db.js'
+import { createClient } from '@supabase/supabase-js'
 
 const app = express()
 const PORT = Number(process.env.PORT || 4000)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const distPath = path.join(__dirname, '..', 'dist')
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+  : null
 
 app.use(cors())
 app.use(express.json())
@@ -18,34 +26,47 @@ function getClientId(req) {
   return String(req.header('x-client-id') ?? '').trim().slice(0, 120)
 }
 
+function requireSupabase(res) {
+  if (supabase) return true
+  res.status(500).json({
+    error: 'Server is missing Supabase configuration. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+  })
+  return false
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
 
 app.get('/api/blessings', (req, res) => {
+  if (!requireSupabase(res)) return
   const clientId = getClientId(req)
-  db.all(
-    `SELECT id, name, message, author_id AS authorId, created_at AS createdAt FROM blessings ORDER BY datetime(created_at) DESC LIMIT 100`,
-    [],
-    (error, rows) => {
+  supabase
+    .from('blessings')
+    .select('id,name,message,author_id,created_at')
+    .order('created_at', { ascending: false })
+    .limit(100)
+    .then(({ data, error }) => {
       if (error) {
         res.status(500).json({ error: 'Failed to load blessings' })
         return
       }
+
+      const rows = Array.isArray(data) ? data : []
       res.json(
         rows.map((row) => ({
           id: row.id,
           name: row.name,
           message: row.message,
-          createdAt: row.createdAt,
-          editable: Boolean(clientId) && row.authorId === clientId,
+          createdAt: row.created_at,
+          editable: Boolean(clientId) && row.author_id === clientId,
         })),
       )
-    },
-  )
+    })
 })
 
 app.post('/api/blessings', (req, res) => {
+  if (!requireSupabase(res)) return
   const clientId = getClientId(req)
   const name = String(req.body?.name ?? '').trim()
   const message = String(req.body?.message ?? '').trim()
@@ -65,26 +86,28 @@ app.post('/api/blessings', (req, res) => {
     return
   }
 
-  db.run(
-    `INSERT INTO blessings (name, message, author_id) VALUES (?, ?, ?)`,
-    [name, message, clientId],
-    function onInsert(error) {
-      if (error) {
+  supabase
+    .from('blessings')
+    .insert({ name, message, author_id: clientId })
+    .select('id,name,message,created_at')
+    .single()
+    .then(({ data, error }) => {
+      if (error || !data) {
         res.status(500).json({ error: 'Failed to save blessing' })
         return
       }
       res.status(201).json({
-        id: this.lastID,
-        name,
-        message,
-        createdAt: new Date().toISOString(),
+        id: data.id,
+        name: data.name,
+        message: data.message,
+        createdAt: data.created_at,
         editable: true,
       })
-    },
-  )
+    })
 })
 
 app.put('/api/blessings/:id', (req, res) => {
+  if (!requireSupabase(res)) return
   const clientId = getClientId(req)
   const blessingId = Number(req.params.id)
   const name = String(req.body?.name ?? '').trim()
@@ -110,7 +133,12 @@ app.put('/api/blessings/:id', (req, res) => {
     return
   }
 
-  db.get(`SELECT id, author_id AS authorId FROM blessings WHERE id = ?`, [blessingId], (findError, row) => {
+  supabase
+    .from('blessings')
+    .select('id,author_id')
+    .eq('id', blessingId)
+    .maybeSingle()
+    .then(async ({ data: row, error: findError }) => {
     if (findError) {
       res.status(500).json({ error: 'Failed to validate blessing ownership' })
       return
@@ -119,22 +147,20 @@ app.put('/api/blessings/:id', (req, res) => {
       res.status(404).json({ error: 'Blessing not found' })
       return
     }
-    if (row.authorId && row.authorId !== clientId) {
+    if (row.author_id && row.author_id !== clientId) {
       res.status(403).json({ error: 'You can only edit blessings created by you' })
       return
     }
 
-    db.run(
-      `UPDATE blessings SET name = ?, message = ?, author_id = COALESCE(author_id, ?) WHERE id = ?`,
-      [name, message, clientId, blessingId],
-      (updateError) => {
-        if (updateError) {
-          res.status(500).json({ error: 'Failed to update blessing' })
-          return
-        }
-        res.json({ id: blessingId, name, message, editable: true })
-      },
-    )
+    const { error: updateError } = await supabase
+      .from('blessings')
+      .update({ name, message, author_id: row.author_id || clientId })
+      .eq('id', blessingId)
+    if (updateError) {
+      res.status(500).json({ error: 'Failed to update blessing' })
+      return
+    }
+    res.json({ id: blessingId, name, message, editable: true })
   })
 })
 
