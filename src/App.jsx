@@ -93,7 +93,7 @@ const CLIENT_ID_STORAGE_KEY = 'wedding_client_id'
 const OWNED_BLESSINGS_STORAGE_KEY = 'wedding_owned_blessing_ids'
 const MUSIC_PREF_KEY = 'wedding_music_pref'
 const MUSIC_VOLUME_KEY = 'wedding_music_volume'
-const DEFAULT_MUSIC_VOLUME = 0.6
+const DEFAULT_MUSIC_VOLUME = 1
 const MUSIC_SOURCES = [
   '/music/atlasaudio-piano-romantic-510293.mp3',
 ]
@@ -463,7 +463,7 @@ function App() {
   }
 
   return (
-    <div className="relative flex flex-col overflow-x-hidden bg-[#fff1f7] pb-0 text-[#5b2740]">
+    <div className="relative flex flex-col overflow-x-hidden bg-[#fff1f7] pb-0 font-sans text-[#7a2e57]">
       {showConfetti && <Confetti width={screenSize.width} height={screenSize.height} numberOfPieces={220} recycle={false} />}
       <audio
         ref={audioRef}
@@ -495,10 +495,10 @@ function App() {
             initial={{ y: 30, opacity: 0 }}
             transition={{ duration: 0.9 }}
           >
-            <p className="text-xs font-semibold tracking-[0.32em] text-[#b83280]/80 uppercase">Wedding Invitation</p>
-            <h1 className="mt-3 font-serif text-3xl leading-tight text-[#9f2b6b] md:text-5xl">You are invited to celebrate love</h1>
+            <p className="text-xs font-semibold tracking-[0.32em] text-[#d63384]/90 uppercase">Wedding Invitation</p>
+            <h1 className="mt-3 font-serif text-3xl font-semibold tracking-wide leading-tight text-gray-900 md:text-5xl">You are invited to celebrate love</h1>
             <div className="mx-auto mt-4 h-px w-28 bg-gradient-to-r from-transparent via-[#e56aa1] to-transparent" />
-            <p className="mt-5 font-serif text-3xl font-semibold text-[#7f2a55] md:text-4xl">Varsha ❤️ Sai Kumar</p>
+            <p className="mt-5 font-serif text-3xl font-semibold tracking-wide text-[#d63384] md:text-4xl">Varsha(Rohini) ❤️ Sai Kumar</p>
             <button
               className="mt-8 rounded-full bg-gradient-to-r from-[#ff5ea1] to-[#e34789] px-8 py-3 font-semibold text-white shadow-lg transition hover:scale-[1.02] hover:from-[#ff73ae] hover:to-[#ea5a97]"
               onClick={openInvitation}
@@ -549,7 +549,7 @@ function App() {
           role="navigation"
         >
           <a
-            className="group flex shrink-0 items-center gap-1 font-serif text-lg font-semibold tracking-[0.18em] text-[#8b2252] transition hover:scale-105"
+            className="group flex shrink-0 items-center gap-1 font-serif text-lg font-semibold tracking-[0.18em] text-[#8b2252] transition duration-300 hover:scale-105 hover:text-[#ff5ea1]"
             href="#hero"
             onClick={(event) => handleNavClick(event, 'hero')}
           >
@@ -562,7 +562,7 @@ function App() {
               return (
                 <li key={item.id}>
                   <a
-                    className={`nav-pill-link group relative font-serif text-[0.95rem] font-semibold transition duration-300 hover:scale-105 ${
+                    className={`nav-pill-link group relative font-serif text-[0.95rem] font-semibold transition duration-300 hover:scale-105 hover:text-[#ff5ea1] ${
                       active ? 'is-active text-[#8b2252]' : 'text-[#c45b8a]'
                     }`}
                     href={`#${item.id}`}
@@ -619,14 +619,14 @@ function App() {
             </button>
             <button
               aria-label={isMuted ? 'Unmute music' : 'Mute music'}
-              className="hidden h-9 w-9 items-center justify-center rounded-full border border-[#ff9cc7] bg-[#fff4fa] text-[#b83280] transition hover:bg-[#ffe7f4] md:inline-flex"
+              className="hidden h-9 w-9 items-center justify-center rounded-full border border-[#ff9cc7] bg-[#fff4fa] text-[#d63384] transition duration-300 hover:bg-[#ffe7f4] hover:text-[#ff5ea1] md:inline-flex"
               onClick={() => setIsMuted((prev) => !prev)}
               title={isMuted ? 'Unmute music' : 'Mute music'}
               type="button"
             >
               {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
             </button>
-            <label className="hidden items-center gap-2 rounded-full border border-[#ff9cc7] bg-[#fff4fa] px-3 py-1 text-[11px] font-semibold text-[#8b2252] md:inline-flex">
+            <label className="hidden items-center gap-2 rounded-full border border-[#ff9cc7] bg-[#fff4fa] px-3 py-1 text-[11px] font-semibold text-[#d63384] md:inline-flex">
               Vol
               <input
                 className="h-1 w-20 accent-[#ff5ea1]"
@@ -638,7 +638,7 @@ function App() {
                 value={musicVolume}
               />
             </label>
-            <span className="hidden rounded-full border border-[#ff9cc7] bg-[#fff4fa] px-3 py-1 text-[11px] font-semibold text-[#8b2252] md:inline-flex">
+            <span className="hidden whitespace-nowrap rounded-full border border-[#ff9cc7] bg-[#fff4fa] px-3 py-1 text-[11px] font-semibold text-[#8b2252] xl:inline-flex">
               Blessings {blessingsCount} ♥
             </span>
             <button
@@ -726,10 +726,10 @@ function App() {
         )}
       </AnimatePresence>
 
-      <main className="mx-auto max-w-6xl scroll-pt-28 px-4 pb-6 pt-28 text-gray-700 md:scroll-pt-32 md:px-6 md:pb-8 md:pt-32">
+      <main className="mx-auto max-w-6xl scroll-pt-28 px-4 pb-6 pt-28 font-sans text-base text-gray-700 md:scroll-pt-32 md:px-6 md:pb-8 md:pt-32 md:text-lg">
         <motion.p
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-30 mx-auto mb-6 w-fit rounded-full border border-[#ffb5d3] bg-[#fff8fc] px-5 py-2 text-center font-serif text-2xl text-[#9f2b6b] shadow-md md:mb-8 md:px-6"
+          className="relative z-30 mx-auto mb-6 w-fit rounded-full border border-[#ffb5d3] bg-[#fff8fc] px-5 py-2 text-center font-serif text-2xl font-semibold tracking-wide text-gray-900 shadow-md md:mb-8 md:px-6"
           initial={{ opacity: 0, y: 16 }}
           transition={{ delay: 0.25 }}
         >
@@ -755,10 +755,10 @@ function App() {
               Royal Indian Wedding
               <FaHeart className="text-lg text-[#ff9bc7]" />
             </p>
-            <h1 className="mt-4 font-serif text-4xl font-semibold leading-tight text-[#fff7e4] drop-shadow-lg md:text-7xl">
-              Varsha <FaHeart className="mx-2 inline text-[#ff9bc7]" /> Sai Kumar
+            <h1 className="mt-4 font-serif text-4xl font-semibold tracking-wide leading-tight text-[#fff7e4] drop-shadow-lg md:text-7xl">
+              Varsha(Rohini) <FaHeart className="mx-2 inline text-[#ff9bc7]" /> Sai Kumar
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-[#fff3df] md:text-2xl">
+            <p className="mx-auto mt-5 max-w-xl text-center font-sans leading-relaxed text-[#fff3df] md:text-2xl">
               Two hearts, one forever
             </p>
           </div>
@@ -784,7 +784,7 @@ function App() {
             <Detail icon="🪔" label="Muhurtham" value="Abhijith Lagnam" />
             <Detail icon="📍" label="Venue" value="Sri Vijayalaxmi Gardens" />
           </div>
-          <p className="mt-6 text-center text-[#6d3651]">
+          <p className="mt-6 text-center leading-relaxed text-[#8a3a62]">
             Vinayak Nagar, Pragathi Nagar, Nizamabad, Telangana 503003
           </p>
         </motion.section>
@@ -804,8 +804,8 @@ function App() {
                 key={item.label}
                 className="rounded-2xl border border-[#ff8fbc40] bg-white/80 p-6 text-center shadow-md transition hover:shadow-lg"
               >
-                <p className="font-serif text-3xl text-[#b83280]">{String(item.value).padStart(2, '0')}</p>
-                <p className="mt-1 flex items-center justify-center gap-1 text-xs uppercase tracking-[0.2em] text-[#6d3651]">
+                <p className="font-serif text-3xl font-semibold tracking-wide text-[#d63384]">{String(item.value).padStart(2, '0')}</p>
+                <p className="mt-1 flex items-center justify-center gap-1 text-xs uppercase tracking-[0.2em] text-[#8a3a62]">
                   <span>{item.icon}</span>
                   {item.label}
                 </p>
@@ -832,13 +832,13 @@ function App() {
           whileInView="visible"
         >
           <h2 className="section-title">💞 Our Love Story</h2>
-          <p className="mt-2 text-center text-lg text-[#6d3651] leading-relaxed">A journey written by destiny</p>
+          <p className="mt-3 text-center text-base leading-relaxed text-[#8a3a62] md:text-lg">A journey written by destiny</p>
           <div className="relative mt-8 space-y-8 border-l border-[#ff8fbc80] pl-6">
             {storyTimeline.map((item) => (
               <div key={item.title} className="relative">
                 <span className="absolute -left-[38px] top-0.5 flex h-8 w-8 items-center justify-center text-lg text-[#d24b8b]">🌸</span>
-                <h3 className="font-serif text-2xl text-[#b83280]">{item.title}</h3>
-                <p className="mt-2 leading-relaxed text-[#6d3651]">{item.text}</p>
+                <h3 className="font-serif text-2xl font-semibold tracking-wide text-gray-900">{item.title}</h3>
+                <p className="mt-3 leading-relaxed text-[#8a3a62]">{item.text}</p>
               </div>
             ))}
           </div>
@@ -868,7 +868,7 @@ function App() {
           whileInView="visible"
         >
           <h2 className="section-title">📸 Gallery</h2>
-          <p className="mt-2 text-center text-sm text-[#6d3651]">Our moments, framed with love</p>
+          <p className="mt-3 text-center text-base leading-relaxed text-[#8a3a62] md:text-lg">Our moments, framed with love</p>
           <div className="mt-10 grid w-full max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2">
             {couplePhotos.gallery.map((photo, index) => (
               <button
@@ -912,7 +912,7 @@ function App() {
               required
               value={blessingName}
             />
-            <label className="text-left text-sm text-[#6d3651]" htmlFor="blessingMessage">
+            <label className="text-left text-sm leading-relaxed text-[#8a3a62]" htmlFor="blessingMessage">
               Blessing Message
               <textarea
                 className="mt-1 w-full rounded-xl border border-[#ff8fbc80] bg-[#fff8fc] p-3 outline-none transition focus:border-[#ff5ea1]"
@@ -933,7 +933,7 @@ function App() {
             </button>
             {editingBlessingId && (
               <button
-                className="md:col-span-2 rounded-full border border-[#ff8fbc80] bg-white px-6 py-3 font-semibold text-[#b83280] transition hover:bg-[#fff3f9]"
+                className="md:col-span-2 rounded-full border border-[#ff8fbc80] bg-white px-6 py-3 font-semibold text-[#d63384] transition duration-300 hover:bg-[#fff3f9] hover:text-[#ff5ea1]"
                 onClick={() => {
                   setEditingBlessingId(null)
                   setBlessingName('')
@@ -946,7 +946,7 @@ function App() {
             )}
           </form>
           {blessingsError && <p className="mt-4 text-sm text-[#a32967]">{blessingsError}</p>}
-          {isBlessingsLoading && <p className="mt-4 text-sm text-[#6d3651]">Loading blessings...</p>}
+          {isBlessingsLoading && <p className="mt-4 text-sm leading-relaxed text-[#8a3a62]">Loading blessings...</p>}
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {blessings.map((entry, index) => {
               const canEdit = Boolean(entry.editable) || ownedBlessingIds.includes(entry.id)
@@ -957,11 +957,11 @@ function App() {
                 className="rounded-2xl border border-[#ffb1d1] bg-[#fff9fd] p-4 shadow-lg"
                 initial={{ opacity: 0, y: 18 }}
               >
-                <p className="font-serif text-xl text-[#b83280]">{entry.name}</p>
-                <p className="mt-2 leading-relaxed text-[#6d3651]">💌 {entry.message}</p>
+                <p className="font-serif text-xl font-semibold tracking-wide text-gray-900">{entry.name}</p>
+                <p className="mt-3 leading-relaxed text-[#8a3a62]">💌 {entry.message}</p>
                 {canEdit && (
                   <button
-                    className="mt-3 rounded-full border border-[#ff8fbc80] px-3 py-1 text-sm font-semibold text-[#b83280] transition hover:bg-[#ffeef7]"
+                    className="mt-3 rounded-full border border-[#ff8fbc80] px-3 py-1 text-sm font-semibold text-[#d63384] transition duration-300 hover:bg-[#ffeef7] hover:text-[#ff5ea1]"
                     onClick={() => startEditingBlessing(entry)}
                     type="button"
                   >
@@ -1001,9 +1001,9 @@ function App() {
               <FaMapMarkerAlt />
               📍 Get Directions
             </button>
-            <p className="mt-2 text-sm text-[#6d3651]">Tap to navigate directly via Google Maps</p>
-            <p className="text-sm text-[#6d3651]">5 mins from Reliance Mall</p>
-            <p className="text-sm text-[#6d3651]">Parking available</p>
+            <p className="mt-3 text-sm leading-relaxed text-[#8a3a62]">Tap to navigate directly via Google Maps</p>
+            <p className="text-sm leading-relaxed text-[#8a3a62]">5 mins from Reliance Mall</p>
+            <p className="text-sm leading-relaxed text-[#8a3a62]">Parking available</p>
           </div>
         </motion.section>
       </main>
@@ -1017,7 +1017,7 @@ function App() {
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-t from-pink-100/60 to-transparent" />
         <div className="relative mx-auto max-w-3xl">
-          <p className="font-serif flex items-center justify-center gap-2 text-lg text-[#7e3a5b]">
+          <p className="font-serif flex items-center justify-center gap-2 text-lg font-semibold tracking-wide text-[#d63384]">
             ✨ With love, families invite you to celebrate
           </p>
         </div>
@@ -1080,11 +1080,11 @@ function App() {
 function Detail({ icon, label, value }) {
   return (
     <div className="rounded-2xl border border-[#ff8fbc40] bg-white/80 p-6 text-center shadow-md transition hover:shadow-lg">
-      <p className="flex items-center justify-center gap-1 text-xs uppercase tracking-[0.2em] text-[#6d3651]">
+      <p className="flex items-center justify-center gap-1 text-xs uppercase tracking-[0.2em] text-[#8a3a62]">
         <span>{icon}</span>
         {label}
       </p>
-      <p className="mt-2 font-serif text-2xl text-[#8d2e5b]">{value}</p>
+      <p className="mt-3 font-serif text-2xl font-semibold tracking-wide text-gray-900">{value}</p>
     </div>
   )
 }
@@ -1092,8 +1092,8 @@ function Detail({ icon, label, value }) {
 function BlessingCard({ title, names }) {
   return (
     <div className="rounded-2xl border border-[#ff8fbc40] bg-white/80 p-6 text-center shadow-md transition hover:shadow-lg">
-      <h3 className="font-serif text-[1.6rem] font-medium text-[#9b2f66]">🌿 {title}</h3>
-      <div className="mt-4 space-y-1.5 text-[1rem] text-[#6d3651]">
+      <h3 className="font-serif text-[1.6rem] font-semibold tracking-wide text-gray-900">🌿 {title}</h3>
+      <div className="mt-4 space-y-1.5 text-base leading-relaxed text-[#8a3a62] md:text-lg">
         {names.map((name, index) => (
           <p key={name} className={index === 0 ? 'font-medium text-[#5f2e48]' : ''}>
             {name}
@@ -1106,7 +1106,7 @@ function BlessingCard({ title, names }) {
 
 function Input({ label, ...props }) {
   return (
-    <label className="text-left text-sm text-[#6d3651]" htmlFor={props.name}>
+    <label className="text-left text-sm leading-relaxed text-[#8a3a62]" htmlFor={props.name}>
       {label}
       <input
         {...props}

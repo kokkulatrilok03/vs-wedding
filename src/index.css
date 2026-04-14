@@ -15,7 +15,7 @@ body {
   margin: 0;
   font-family: var(--font-sans);
   background: linear-gradient(180deg, #fff1f7 0%, #ffe8f2 100%);
-  color: #5b2740;
+  color: #7a2e57;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
@@ -41,11 +41,11 @@ body {
 
 .section-title {
   text-align: center;
-  color: #7d2b54;
+  color: #d63384;
   font-family: var(--font-serif);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   font-size: clamp(1.9rem, 4vw, 2.8rem);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 @media (min-width: 768px) {
