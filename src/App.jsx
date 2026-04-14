@@ -7,11 +7,7 @@ import {
   FaChevronRight,
   FaHeart,
   FaMapMarkerAlt,
-  FaPause,
-  FaPlay,
   FaTimes,
-  FaVolumeMute,
-  FaVolumeUp
 } from 'react-icons/fa'
 
 const weddingDate = new Date('2026-04-29T11:45:00+05:30')
@@ -171,11 +167,7 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isNavElevated, setIsNavElevated] = useState(false)
   const [pulsedNavId, setPulsedNavId] = useState(null)
-  const [musicVolume, setMusicVolume] = useState(() => {
-    if (typeof window === 'undefined') return DEFAULT_MUSIC_VOLUME
-    const raw = Number(localStorage.getItem(MUSIC_VOLUME_KEY))
-    return Number.isFinite(raw) ? Math.min(Math.max(raw, 0), 1) : DEFAULT_MUSIC_VOLUME
-  })
+  const [musicVolume, setMusicVolume] = useState(DEFAULT_MUSIC_VOLUME)
   const [isMuted, setIsMuted] = useState(false)
   const [musicSourceIndex, setMusicSourceIndex] = useState(0)
 
@@ -208,6 +200,11 @@ function App() {
     if (saved === 'playing') {
       resumeMusicRequestedRef.current = true
     }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(MUSIC_VOLUME_KEY, String(DEFAULT_MUSIC_VOLUME))
   }, [])
 
   useEffect(() => {
@@ -349,20 +346,6 @@ function App() {
     }
   }, [isMuted, musicSourceIndex, musicVolume])
 
-  const toggleMusic = async () => {
-    if (!audioRef.current) return
-
-    if (isMusicPlaying) {
-      audioRef.current.pause()
-      setIsMusicPlaying(false)
-      if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'paused')
-      return
-    }
-
-    await startMusicWithFade()
-    if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'playing')
-  }
-
   const openInvitation = async () => {
     setIsIntroOpen(false)
     await startMusicWithFade()
@@ -399,8 +382,6 @@ function App() {
   const activeImage = selectedImageIndex !== null ? couplePhotos.gallery[selectedImageIndex] : null
   const hasArrived = Object.values(timeLeft).every((value) => value === 0)
   const welcomeText = guestName ? `Welcome, ${guestName} 💖` : 'Welcome, Dear Guest 💖'
-  const blessingsCount = blessings.length
-
   const handleNavClick = (event, id) => {
     event.preventDefault()
     const target = document.getElementById(id)
@@ -599,48 +580,7 @@ function App() {
             })}
           </ul>
 
-          <div className="flex shrink-0 items-center gap-2 md:gap-3">
-            <button
-              className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff8fbc] to-[#e85a8c] px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:scale-105 md:px-5 md:text-sm ${
-                isMusicPlaying ? 'shadow-[0_0_22px_rgba(255,94,161,0.65)]' : 'hover:shadow-[0_0_20px_rgba(255,94,161,0.55)]'
-              }`}
-              onClick={toggleMusic}
-              title="Play our song 🎵"
-              type="button"
-            >
-              {isMusicPlaying ? (
-                <motion.span animate={{ scale: [1, 1.18, 1] }} transition={{ repeat: Infinity, duration: 1.1 }}>
-                  <FaPause className="text-sm" />
-                </motion.span>
-              ) : (
-                <FaPlay className="text-sm" />
-              )}
-              {isMusicPlaying ? 'Pause' : 'Play Music'}
-            </button>
-            <button
-              aria-label={isMuted ? 'Unmute music' : 'Mute music'}
-              className="hidden h-9 w-9 items-center justify-center rounded-full border border-[#ff9cc7] bg-[#fff4fa] text-[#d63384] transition duration-300 hover:bg-[#ffe7f4] hover:text-[#ff5ea1] md:inline-flex"
-              onClick={() => setIsMuted((prev) => !prev)}
-              title={isMuted ? 'Unmute music' : 'Mute music'}
-              type="button"
-            >
-              {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
-            </button>
-            <label className="hidden items-center gap-2 rounded-full border border-[#ff9cc7] bg-[#fff4fa] px-3 py-1 text-[11px] font-semibold text-[#d63384] md:inline-flex">
-              Vol
-              <input
-                className="h-1 w-20 accent-[#ff5ea1]"
-                max="1"
-                min="0"
-                onChange={(event) => setMusicVolume(Number(event.target.value))}
-                step="0.05"
-                type="range"
-                value={musicVolume}
-              />
-            </label>
-            <span className="hidden whitespace-nowrap rounded-full border border-[#ff9cc7] bg-[#fff4fa] px-3 py-1 text-[11px] font-semibold text-[#8b2252] xl:inline-flex">
-              Blessings {blessingsCount} ♥
-            </span>
+          <div className="flex shrink-0 items-center gap-2">
             <button
               aria-expanded={mobileMenuOpen}
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
@@ -683,11 +623,8 @@ function App() {
               initial={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
             >
-              <div className="flex items-center justify-between border-b border-[#ffd6e8] px-4 py-4">
+              <div className="flex items-center justify-start border-b border-[#ffd6e8] px-4 py-4">
                 <span className="font-serif text-lg tracking-wide text-[#8b2252]">Menu</span>
-                <span className="rounded-full border border-[#ff9cc7] bg-[#fff4fa] px-3 py-1 text-[11px] font-semibold text-[#8b2252]">
-                  Blessings {blessingsCount} ♥
-                </span>
               </div>
               <motion.ul
                 animate="visible"
