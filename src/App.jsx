@@ -302,7 +302,7 @@ function App() {
 
   const timeItems = useMemo(
     () => [
-      { label: 'Days', value: timeLeft.days, icon: '📆' },
+      { label: 'Days', value: timeLeft.days, icon: '📅' },
       { label: 'Hours', value: timeLeft.hours, icon: '⏳' },
       { label: 'Minutes', value: timeLeft.minutes, icon: '⏱️' },
       { label: 'Seconds', value: timeLeft.seconds, icon: '⌛' },
@@ -709,7 +709,7 @@ function App() {
           viewport={{ once: true, amount: 0.2 }}
           whileInView="visible"
         >
-          <h2 className="section-title">📅 Wedding Details</h2>
+          <h2 className="section-title">📅 Wedding Details </h2>
           <div className="mx-auto mt-6 max-w-xs">
             <div className="heart-photo-wrap w-full max-w-[320px]">
               <img alt={couplePhotos.gallery[1].alt} className="h-auto w-full" loading="lazy" src={couplePhotos.gallery[1].src} />
@@ -734,7 +734,7 @@ function App() {
           viewport={{ once: true, amount: 0.2 }}
           whileInView="visible"
         >
-          <h2 className="section-title">⏳ Countdown To Muhurtham</h2>
+          <h2 className="section-title">Countdown To Muhurtham ⏳</h2>
           <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
             {timeItems.map((item) => (
               <motion.div
@@ -768,7 +768,7 @@ function App() {
           viewport={{ once: true, amount: 0.2 }}
           whileInView="visible"
         >
-          <h2 className="section-title">💞 Our Love Story</h2>
+          <h2 className="section-title">Our Love Story 💞</h2>
           <p className="mt-3 text-center text-base leading-relaxed text-[#8a3a62] md:text-lg">A journey written by destiny</p>
           <div className="relative mt-8 space-y-8 border-l border-[#ff8fbc80] pl-6">
             {storyTimeline.map((item) => (
@@ -789,7 +789,7 @@ function App() {
           viewport={{ once: true, amount: 0.2 }}
           whileInView="visible"
         >
-          <h2 className="section-title">👨‍👩‍👧‍👦 Families & Blessings</h2>
+          <h2 className="section-title">Families & Blessings 👨‍👩‍👧‍👦</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             <BlessingCard title="Bride Side" names={['Kokkula Raghveer', 'Late Lavanya','R/o. Nizamabad']} />
             <BlessingCard title="Groom Side" names={['Aita Vaikuntam', 'Kousalya', 'R/o. Nizamabad']} />
@@ -804,7 +804,7 @@ function App() {
           viewport={{ once: true, amount: 0.2 }}
           whileInView="visible"
         >
-          <h2 className="section-title">📸 Gallery</h2>
+          <h2 className="section-title">Gallery 📸</h2>
           <p className="mt-3 text-center text-base leading-relaxed text-[#8a3a62] md:text-lg">Our moments, framed with love</p>
           <div className="mt-10 grid w-full max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2">
             {couplePhotos.gallery.map((photo, index) => (
@@ -836,7 +836,7 @@ function App() {
           viewport={{ once: true, amount: 0.2 }}
           whileInView="visible"
         >
-          <h2 className="section-title">🙏 Bless the Couple</h2>
+          <h2 className="section-title">Bless the Couple 🙏</h2>
           <form
             className="mt-7 grid gap-4 md:grid-cols-2"
             onSubmit={handleBlessingSubmit}
@@ -919,7 +919,7 @@ function App() {
           viewport={{ once: true, amount: 0.2 }}
           whileInView="visible"
         >
-          <h2 className="section-title">🗺️ Venue Location</h2>
+          <h2 className="section-title">Venue Location 🗺️</h2>
           <div className="mt-8 rounded-2xl border border-[#ff8fbc80] bg-[#fff8fc] p-4 shadow-2xl">
             <iframe
               allowFullScreen=""
