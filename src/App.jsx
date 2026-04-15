@@ -852,7 +852,7 @@ function App() {
         >
           <h2 className="section-title">Families & Blessings 👨‍👩‍👧‍👦</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
-            <BlessingCard title="Bride Side" names={['Kokkula Raghveer', 'Late Lavanya','R/o. Nizamabad']} />
+            <BlessingCard title="Bride Side" names={['Kokkula Raghuveer', 'Late Lavanya','R/o. Nizamabad']} />
             <BlessingCard title="Groom Side" names={['Aita Vaikuntam', 'Kousalya', 'R/o. Nizamabad']} />
           </div>
         </motion.section>
