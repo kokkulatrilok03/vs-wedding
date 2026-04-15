@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'fra
 import Confetti from 'react-confetti'
 import {
   FaBars,
+  FaCalendarAlt,
   FaChevronLeft,
   FaChevronRight,
   FaHeart,
@@ -145,7 +146,7 @@ function App() {
   const [isIntroOpen, setIsIntroOpen] = useState(true)
   const [isMusicPlaying, setIsMusicPlaying] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(null)
-  const [showConfetti, setShowConfetti] = useState(true)
+  const [showConfetti, setShowConfetti] = useState(false)
   const [guestName] = useState(() => {
     if (typeof window === 'undefined') return ''
     const incoming = new URLSearchParams(window.location.search).get('name')
@@ -179,6 +180,19 @@ function App() {
   const hasTriggeredArrivalRef = useRef(false)
   const resumeMusicRequestedRef = useRef(false)
   const fadeTimerRef = useRef(null)
+  const confettiHideTimerRef = useRef(null)
+
+  const triggerConfettiBurst = useCallback((durationMs = 6000) => {
+    if (confettiHideTimerRef.current) {
+      clearTimeout(confettiHideTimerRef.current)
+      confettiHideTimerRef.current = null
+    }
+    setShowConfetti(true)
+    confettiHideTimerRef.current = setTimeout(() => {
+      setShowConfetti(false)
+      confettiHideTimerRef.current = null
+    }, durationMs)
+  }, [])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -187,16 +201,14 @@ function App() {
       const arrived = Object.values(next).every((value) => value === 0)
       if (arrived && !hasTriggeredArrivalRef.current) {
         hasTriggeredArrivalRef.current = true
-        setShowConfetti(true)
-        setTimeout(() => setShowConfetti(false), 6000)
+        triggerConfettiBurst()
       }
     }, 1000)
     return () => clearInterval(timer)
-  }, [])
+  }, [triggerConfettiBurst])
 
-  useEffect(() => {
-    const timeout = setTimeout(() => setShowConfetti(false), 5500)
-    return () => clearTimeout(timeout)
+  useEffect(() => () => {
+    if (confettiHideTimerRef.current) clearTimeout(confettiHideTimerRef.current)
   }, [])
 
   useEffect(() => {
@@ -338,7 +350,11 @@ function App() {
 
   const timeItems = useMemo(
     () => [
-      { label: 'Days', value: timeLeft.days, icon: '📅' },
+      {
+        label: 'Days',
+        value: timeLeft.days,
+        icon: <FaCalendarAlt className="inline h-3 w-3 shrink-0 text-[#8a3a62]" aria-hidden />,
+      },
       { label: 'Hours', value: timeLeft.hours, icon: '⏳' },
       { label: 'Minutes', value: timeLeft.minutes, icon: '⏱️' },
       { label: 'Seconds', value: timeLeft.seconds, icon: '⌛' },
@@ -384,6 +400,7 @@ function App() {
 
   const openInvitation = async () => {
     setIsIntroOpen(false)
+    triggerConfettiBurst()
     await startMusicWithFade()
     if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'playing')
   }
@@ -750,14 +767,17 @@ function App() {
           viewport={{ once: true, amount: 0.2 }}
           whileInView="visible"
         >
-          <h2 className="section-title">📅 Wedding Details </h2>
+          <h2 className="section-title flex flex-wrap items-center justify-center gap-2">
+            <FaCalendarAlt className="h-[0.85em] w-[0.85em] shrink-0 text-[#d63384]" aria-hidden />
+            <span>Wedding Details</span>
+          </h2>
           <div className="mx-auto mt-6 max-w-xs">
             <div className="heart-photo-wrap w-full max-w-[320px]">
               <img alt={couplePhotos.gallery[1].alt} className="h-auto w-full" loading="lazy" src={couplePhotos.gallery[1].src} />
             </div>
           </div>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
-            <Detail icon="📅" label="Date" value="29 April 2026" />
+            <Detail icon={<FaCalendarAlt className="inline h-3.5 w-3.5 shrink-0 text-[#8a3a62]" aria-hidden />} label="Date" value="29 April 2026" />
             <Detail icon="⏰" label="Time" value="11:45 AM" />
             <Detail icon="🪔" label="Muhurtham" value="Abhijith Lagnam" />
             <Detail icon="📍" label="Venue" value="Sri Vijayalaxmi Gardens" />
