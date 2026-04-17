@@ -844,14 +844,17 @@ function App() {
           className="section-card section-card-heart mt-20"
           id="details"
         >
-          <h2 className="section-title">📅 Wedding Details </h2>
+          <h2 className="section-title flex w-full items-center justify-center gap-2">
+            <FaCalendarAlt className="h-6 w-6 text-[#d63384]" aria-hidden />
+            Wedding Details
+          </h2>
           <div className="mx-auto mt-6 max-w-xs">
             <div className="heart-photo-wrap w-full max-w-[320px]">
               <img alt={couplePhotos.gallery[1].alt} className="h-auto w-full" loading="lazy" src={couplePhotos.gallery[1].src} />
             </div>
           </div>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
-            <Detail icon="📅" label="Date" value="29 April 2026" />
+            <Detail icon={<FaCalendarAlt className="h-3.5 w-3.5 text-[#8a3a62]" aria-hidden />} label="Date" value="29 April 2026" />
             <Detail icon="⏰" label="Time" value="11:45 AM" />
             <Detail icon="🪔" label="Muhurtham" value="Abhijith Lagnam" />
             <Detail icon="📍" label="Venue" value="Sri Vijayalaxmi Gardens" />
