@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import Confetti from 'react-confetti'
 import {
   FaBars,
@@ -64,34 +64,27 @@ const storyTimeline = [
 ]
 
 const floatingHearts = [
-  { left: '4%', size: '18px', duration: '13s', delay: '0s' },
-  { left: '9%', size: '28px', duration: '17s', delay: '2s' },
-  { left: '14%', size: '42px', duration: '20s', delay: '1s' },
-  { left: '19%', size: '24px', duration: '14s', delay: '3s' },
-  { left: '24%', size: '34px', duration: '18s', delay: '0.8s' },
-  { left: '29%', size: '20px', duration: '15s', delay: '2.5s' },
-  { left: '34%', size: '46px', duration: '21s', delay: '1.4s' },
-  { left: '39%', size: '26px', duration: '16s', delay: '4s' },
-  { left: '44%', size: '36px', duration: '19s', delay: '2.2s' },
-  { left: '49%', size: '22px', duration: '14s', delay: '0.5s' },
-  { left: '54%', size: '40px', duration: '20s', delay: '3.2s' },
-  { left: '59%', size: '30px', duration: '17s', delay: '1.1s' },
-  { left: '64%', size: '19px', duration: '13s', delay: '2.8s' },
-  { left: '69%', size: '44px', duration: '22s', delay: '0.6s' },
-  { left: '74%', size: '25px', duration: '16s', delay: '3.6s' },
-  { left: '79%', size: '38px', duration: '19s', delay: '1.7s' },
-  { left: '84%', size: '21px', duration: '15s', delay: '4.2s' },
-  { left: '89%', size: '48px', duration: '23s', delay: '0.3s' },
-  { left: '94%', size: '27px', duration: '16s', delay: '2.9s' },
+  { left: '6%', size: '18px', duration: '23s', delay: '0s' },
+  { left: '16%', size: '22px', duration: '28s', delay: '2.2s' },
+  { left: '24%', size: '26px', duration: '24s', delay: '1s' },
+  { left: '36%', size: '20px', duration: '30s', delay: '3.8s' },
+  { left: '46%', size: '24px', duration: '26s', delay: '1.4s' },
+  { left: '57%', size: '19px', duration: '34s', delay: '2.7s' },
+  { left: '68%', size: '23px', duration: '29s', delay: '0.8s' },
+  { left: '77%', size: '20px', duration: '32s', delay: '4.1s' },
+  { left: '86%', size: '25px', duration: '27s', delay: '1.9s' },
+  { left: '94%', size: '18px', duration: '35s', delay: '3.2s' },
 ]
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 const CLIENT_ID_STORAGE_KEY = 'wedding_client_id'
 const OWNED_BLESSINGS_STORAGE_KEY = 'wedding_owned_blessing_ids'
+const BLESSINGS_CACHE_STORAGE_KEY = 'wedding_blessings_cache_v1'
 const MUSIC_PREF_KEY = 'wedding_music_pref'
 const MUSIC_VOLUME_KEY = 'wedding_music_volume'
 const DEFAULT_MUSIC_VOLUME = 1
 const BLESSINGS_PAGE_SIZE = 20
+const BLESSINGS_REQUEST_TIMEOUT_MS = 7000
 const MUSIC_SOURCES = [
   '/music/atlasaudio-piano-romantic-510293.mp3',
 ]
@@ -121,6 +114,39 @@ function getOwnedBlessingIds() {
   }
 }
 
+function getCachedBlessings() {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(BLESSINGS_CACHE_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed?.items) || !Number.isFinite(parsed?.page)) return null
+    return {
+      items: parsed.items,
+      page: parsed.page,
+      hasMore: Boolean(parsed.hasMore),
+    }
+  } catch {
+    return null
+  }
+}
+
+function setCachedBlessings(items, page, hasMore) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(
+      BLESSINGS_CACHE_STORAGE_KEY,
+      JSON.stringify({
+        items,
+        page,
+        hasMore,
+      }),
+    )
+  } catch {
+    // no-op
+  }
+}
+
 function getTimeLeft() {
   const now = new Date()
   const diff = weddingDate - now
@@ -137,10 +163,11 @@ function getTimeLeft() {
 }
 
 function App() {
+  const prefersReducedMotion = useReducedMotion()
   const { scrollY, scrollYProgress } = useScroll()
   const heroY = useTransform(scrollY, [0, 600], [0, -110])
   const heroScale = useTransform(scrollY, [0, 500], [1.05, 1.15])
-  const progressScaleX = useSpring(scrollYProgress, { stiffness: 120, damping: 24, mass: 0.25 })
+  const progressScaleX = useSpring(scrollYProgress, { stiffness: 90, damping: 28, mass: 0.3 })
 
   const [timeLeft, setTimeLeft] = useState(getTimeLeft())
   const [isIntroOpen, setIsIntroOpen] = useState(true)
@@ -172,17 +199,21 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isNavElevated, setIsNavElevated] = useState(false)
   const [pulsedNavId, setPulsedNavId] = useState(null)
-  const [musicVolume, setMusicVolume] = useState(DEFAULT_MUSIC_VOLUME)
-  const [isMuted, setIsMuted] = useState(false)
+  const [musicVolume] = useState(DEFAULT_MUSIC_VOLUME)
+  const [isMuted] = useState(false)
   const [musicSourceIndex, setMusicSourceIndex] = useState(0)
+  const isSmallScreen = screenSize.width < 768
+  const useLiteMotion = prefersReducedMotion || isSmallScreen
 
   const audioRef = useRef(null)
   const hasTriggeredArrivalRef = useRef(false)
   const resumeMusicRequestedRef = useRef(false)
   const fadeTimerRef = useRef(null)
   const confettiHideTimerRef = useRef(null)
+  const hasHydratedBlessingsCacheRef = useRef(false)
 
   const triggerConfettiBurst = useCallback((durationMs = 6000) => {
+    if (useLiteMotion) return
     if (confettiHideTimerRef.current) {
       clearTimeout(confettiHideTimerRef.current)
       confettiHideTimerRef.current = null
@@ -192,7 +223,7 @@ function App() {
       setShowConfetti(false)
       confettiHideTimerRef.current = null
     }, durationMs)
-  }, [])
+  }, [useLiteMotion])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -293,14 +324,29 @@ function App() {
   }, [])
 
   const fetchBlessings = useCallback(async (page = 1, append = false) => {
+    const cached = !append ? getCachedBlessings() : null
+    if (!append && !hasHydratedBlessingsCacheRef.current) {
+      if (cached?.items?.length) {
+        setBlessings(cached.items)
+        setBlessingsPage(cached.page)
+        setHasMoreBlessings(cached.hasMore)
+        setIsBlessingsLoading(false)
+      }
+      hasHydratedBlessingsCacheRef.current = true
+    }
+
     if (append) {
       setIsLoadingMoreBlessings(true)
-    } else {
+    } else if (!cached?.items?.length) {
       setIsBlessingsLoading(true)
     }
+    let timeout
     try {
+      const controller = new AbortController()
+      timeout = setTimeout(() => controller.abort(), BLESSINGS_REQUEST_TIMEOUT_MS)
       const response = await fetch(`${API_BASE}/blessings?page=${page}&limit=${BLESSINGS_PAGE_SIZE}`, {
         headers: { 'X-Client-Id': clientId },
+        signal: controller.signal,
       })
       if (!response.ok) throw new Error('Failed to fetch blessings')
       const payload = await response.json()
@@ -309,6 +355,10 @@ function App() {
         : Array.isArray(payload?.items)
           ? payload.items
           : []
+      const previousItems = getCachedBlessings()?.items ?? []
+      const previousIds = new Set(previousItems.map((item) => item.id))
+      const mergedItems = append ? [...previousItems, ...rows.filter((item) => !previousIds.has(item.id))] : rows
+      const nextHasMore = Array.isArray(payload?.items) ? Boolean(payload.hasMore) : rows.length === BLESSINGS_PAGE_SIZE
       setBlessings((prev) => {
         if (!append) return rows
         const existingIds = new Set(prev.map((item) => item.id))
@@ -316,11 +366,8 @@ function App() {
         return [...prev, ...nextRows]
       })
       setBlessingsPage(page)
-      if (Array.isArray(payload?.items)) {
-        setHasMoreBlessings(Boolean(payload.hasMore))
-      } else {
-        setHasMoreBlessings(rows.length === BLESSINGS_PAGE_SIZE)
-      }
+      setHasMoreBlessings(nextHasMore)
+      setCachedBlessings(mergedItems, page, nextHasMore)
       setBlessingsError('')
     } catch {
       if (!append) {
@@ -331,6 +378,7 @@ function App() {
         setBlessingsError('Unable to load more blessings right now. Please try again.')
       }
     } finally {
+      if (timeout) clearTimeout(timeout)
       if (append) {
         setIsLoadingMoreBlessings(false)
       } else {
@@ -427,8 +475,16 @@ function App() {
   }, [isMusicPlaying, startMusicWithFade])
 
   const sectionFade = {
-    hidden: { opacity: 0, y: 32 },
+    hidden: { opacity: 0, y: 24 },
     visible: { opacity: 1, y: 0 },
+  }
+  const sectionTransition = { duration: 0.5, ease: 'easeOut' }
+  const sectionMotionProps = {
+    initial: 'hidden',
+    whileInView: 'visible',
+    viewport: { once: true, amount: 0.2 },
+    variants: sectionFade,
+    transition: sectionTransition,
   }
   void motion
 
@@ -472,13 +528,13 @@ function App() {
       if (created?.id && Number.isInteger(created.id)) {
         setOwnedBlessingIds((prev) => (prev.includes(created.id) ? prev : [...prev, created.id]))
       }
-      if (isEditing) {
-        setBlessings((prev) =>
-          prev.map((entry) => (entry.id === editingBlessingId ? { ...entry, ...created, editable: true } : entry)),
-        )
-      } else {
-        setBlessings((prev) => [{ ...created, editable: true }, ...prev])
-      }
+      setBlessings((prev) => {
+        const next = isEditing
+          ? prev.map((entry) => (entry.id === editingBlessingId ? { ...entry, ...created, editable: true } : entry))
+          : [{ ...created, editable: true }, ...prev]
+        setCachedBlessings(next, blessingsPage, hasMoreBlessings)
+        return next
+      })
       setBlessingName('')
       setBlessingMessage('')
       setEditingBlessingId(null)
@@ -503,7 +559,7 @@ function App() {
 
   return (
     <div className="relative flex flex-col overflow-x-hidden bg-[#fff1f7] pb-0 font-sans text-[#7a2e57]">
-      {showConfetti && <Confetti width={screenSize.width} height={screenSize.height} numberOfPieces={220} recycle={false} />}
+      {showConfetti && <Confetti width={screenSize.width} height={screenSize.height} numberOfPieces={140} recycle={false} />}
       <audio
         ref={audioRef}
         loop
@@ -530,9 +586,9 @@ function App() {
           />
           <motion.div
             animate={{ y: 0, opacity: 1 }}
-            className="relative z-10 w-full max-w-xl rounded-3xl border border-[#ffd2e7] bg-white/75 px-8 py-10 text-center shadow-[0_25px_60px_rgba(74,16,48,0.28)] backdrop-blur-md md:px-12"
+            className="relative z-10 w-full max-w-xl rounded-3xl border border-[#ffd2e7] bg-white/82 px-8 py-10 text-center shadow-[0_16px_36px_rgba(74,16,48,0.2)] backdrop-blur-sm md:px-12"
             initial={{ y: 30, opacity: 0 }}
-            transition={{ duration: 0.9 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
           >
             <p className="text-xs font-semibold tracking-[0.32em] text-[#d63384]/90 uppercase">Wedding Invitation</p>
             <h1 className="mt-3 font-serif text-3xl font-semibold tracking-wide leading-tight text-gray-900 md:text-5xl">You are invited to celebrate love</h1>
@@ -549,41 +605,45 @@ function App() {
         </motion.div>
       )}
 
-      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-45">
-        <div className="petals-layer" />
-      </div>
-      <div aria-hidden="true" className="hearts-float">
-        {floatingHearts.map((heart, index) => (
-          <span
-            key={`${heart.left}-${heart.delay}-${index}`}
-            style={{
-              left: heart.left,
-              fontSize: heart.size,
-              animationDuration: heart.duration,
-              animationDelay: heart.delay,
-            }}
-          >
-            ♥
-          </span>
-        ))}
-      </div>
+      {!useLiteMotion && (
+        <>
+          <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
+            <div className="petals-layer" />
+          </div>
+          <div aria-hidden="true" className="hearts-float">
+            {floatingHearts.map((heart, index) => (
+              <span
+                key={`${heart.left}-${heart.delay}-${index}`}
+                style={{
+                  left: heart.left,
+                  fontSize: heart.size,
+                  animationDuration: heart.duration,
+                  animationDelay: heart.delay,
+                }}
+              >
+                ♥
+              </span>
+            ))}
+          </div>
+        </>
+      )}
 
       {!isIntroOpen && (
       <motion.header
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         className="pointer-events-none fixed top-4 left-1/2 z-50 w-[90%] max-w-5xl -translate-x-1/2"
         initial={{ opacity: 0, y: -14, filter: 'blur(10px)' }}
-        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
       >
         <motion.div
           className="pointer-events-none absolute top-0 left-0 h-[2px] w-full origin-left rounded-full bg-gradient-to-r from-[#ff7eb6] via-[#ff5ea1] to-[#c83f78]"
           style={{ scaleX: progressScaleX }}
         />
         <nav
-          className={`pointer-events-auto flex items-center justify-between gap-3 rounded-full border px-5 py-3 transition-all duration-500 md:gap-4 md:px-6 md:py-3.5 ${
+          className={`pointer-events-auto flex items-center justify-between gap-3 rounded-full border px-5 py-3 transition-all duration-300 md:gap-4 md:px-6 md:py-3.5 ${
             isNavElevated
-              ? 'border-white/45 bg-white/30 shadow-xl backdrop-blur-md'
-              : 'border-white/20 bg-white/10 shadow-[0_8px_20px_rgba(156,58,103,0.08)] backdrop-blur-sm'
+              ? 'border-white/45 bg-white/35 shadow-lg backdrop-blur-sm'
+              : 'border-white/20 bg-white/15 shadow-[0_6px_14px_rgba(156,58,103,0.08)]'
           }`}
           role="navigation"
         >
@@ -613,20 +673,20 @@ function App() {
                       {active && <motion.span className="absolute -bottom-1 left-1/2 h-[2px] w-full -translate-x-1/2 rounded-full bg-[#ff5ea1]" layoutId="active-nav-underline" />}
                       {active && (
                         <motion.span
-                          animate={{ scale: [1, 1.22, 1] }}
+                          animate={useLiteMotion ? { scale: 1 } : { scale: [1, 1.16, 1] }}
                           className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-[#ff5ea1]"
                           layoutId="active-nav-heart"
-                          transition={{ duration: 0.45 }}
+                          transition={{ duration: 0.5, ease: 'easeOut' }}
                         >
                           ♥
                         </motion.span>
                       )}
                       {pulsedNavId === item.id && (
                         <motion.span
-                          animate={{ scale: [1, 1.7, 1], opacity: [0.95, 0.15, 0] }}
+                          animate={useLiteMotion ? { opacity: 0 } : { scale: [1, 1.45, 1], opacity: [0.9, 0.2, 0] }}
                           className="absolute -top-2 right-[-10px] text-[11px] text-[#ff5ea1]"
                           initial={{ scale: 1, opacity: 0.95 }}
-                          transition={{ duration: 0.42 }}
+                          transition={{ duration: 0.5, ease: 'easeOut' }}
                         >
                           ♥
                         </motion.span>
@@ -648,7 +708,7 @@ function App() {
             >
               <motion.span
                 animate={{ rotate: mobileMenuOpen ? 180 : 0, scale: mobileMenuOpen ? 1.08 : 1 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
               >
                 {mobileMenuOpen ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
               </motion.span>
@@ -666,20 +726,20 @@ function App() {
             exit={{ opacity: 0 }}
             initial={{ opacity: 0 }}
             key="mobile-nav"
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
           >
             <button
               aria-label="Close menu overlay"
-              className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+              className="absolute inset-0 bg-black/35"
               onClick={() => setMobileMenuOpen(false)}
               type="button"
             />
             <motion.aside
               animate={{ x: 0 }}
-              className="absolute top-0 right-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-white/30 bg-[#fff8fc]/95 shadow-2xl backdrop-blur-lg"
+              className="absolute top-0 right-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-white/30 bg-[#fff8fc]/95 shadow-xl"
               exit={{ x: '100%' }}
               initial={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
             >
               <div className="flex items-center justify-start border-b border-[#ffd6e8] px-4 py-4">
                 <span className="font-serif text-lg tracking-wide text-[#8b2252]">Menu</span>
@@ -721,12 +781,12 @@ function App() {
         )}
       </AnimatePresence>
 
-      <main className="mx-auto max-w-6xl scroll-pt-28 px-4 pb-6 pt-28 font-sans text-base text-gray-700 md:scroll-pt-32 md:px-6 md:pb-8 md:pt-32 md:text-lg">
+      <main className="mx-auto max-w-6xl scroll-pt-28 px-4 pb-2 pt-28 font-sans text-base text-gray-700 md:scroll-pt-32 md:px-6 md:pb-4 md:pt-32 md:text-lg">
         <motion.p
           animate={{ opacity: 1, y: 0 }}
           className="relative z-30 mx-auto mb-6 w-fit rounded-full border border-[#ffb5d3] bg-[#fff8fc] px-5 py-2 text-center font-serif text-2xl font-semibold tracking-wide text-gray-900 shadow-md md:mb-8 md:px-6"
           initial={{ opacity: 0, y: 16 }}
-          transition={{ delay: 0.25 }}
+          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
         >
           {welcomeText}
         </motion.p>
@@ -738,12 +798,12 @@ function App() {
           <motion.div
             className="absolute inset-2 rounded-[2.4rem] bg-cover bg-center md:inset-3"
             style={{
-              y: heroY,
-              scale: heroScale,
+              y: useLiteMotion ? 0 : heroY,
+              scale: useLiteMotion ? 1.02 : heroScale,
               backgroundImage: `linear-gradient(rgba(67,18,43,0.35), rgba(67,18,43,0.58)), url('${couplePhotos.hero}')`,
             }}
           />
-          <div className="pointer-events-none absolute inset-2 rounded-[2.4rem] border border-[#ffd7e9] shadow-[0_24px_45px_rgba(145,41,93,0.2)] md:inset-3" />
+          <div className="pointer-events-none absolute inset-2 rounded-[2.4rem] border border-[#ffd7e9] shadow-[0_14px_28px_rgba(145,41,93,0.16)] md:inset-3" />
           <div className="relative z-10 rounded-2xl bg-black/30 px-4 py-2">
             <p className="font-handwritten flex items-center justify-center gap-2 text-2xl text-[#ffd6ea]">
               <FaHeart className="text-lg text-[#ff9bc7]" />
@@ -760,24 +820,18 @@ function App() {
         </section>
 
         <motion.section
+          {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="details"
-          initial="hidden"
-          variants={sectionFade}
-          viewport={{ once: true, amount: 0.2 }}
-          whileInView="visible"
         >
-          <h2 className="section-title flex flex-wrap items-center justify-center gap-2">
-            <FaCalendarAlt className="h-[0.85em] w-[0.85em] shrink-0 text-[#d63384]" aria-hidden />
-            <span>Wedding Details</span>
-          </h2>
+          <h2 className="section-title">📅 Wedding Details </h2>
           <div className="mx-auto mt-6 max-w-xs">
             <div className="heart-photo-wrap w-full max-w-[320px]">
               <img alt={couplePhotos.gallery[1].alt} className="h-auto w-full" loading="lazy" src={couplePhotos.gallery[1].src} />
             </div>
           </div>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
-            <Detail icon={<FaCalendarAlt className="inline h-3.5 w-3.5 shrink-0 text-[#8a3a62]" aria-hidden />} label="Date" value="29 April 2026" />
+            <Detail icon="📅" label="Date" value="29 April 2026" />
             <Detail icon="⏰" label="Time" value="11:45 AM" />
             <Detail icon="🪔" label="Muhurtham" value="Abhijith Lagnam" />
             <Detail icon="📍" label="Venue" value="Sri Vijayalaxmi Gardens" />
@@ -788,12 +842,9 @@ function App() {
         </motion.section>
 
         <motion.section
+          {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="countdown"
-          initial="hidden"
-          variants={sectionFade}
-          viewport={{ once: true, amount: 0.2 }}
-          whileInView="visible"
         >
           <h2 className="section-title">Countdown To Muhurtham ⏳</h2>
           <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -815,6 +866,7 @@ function App() {
               animate={{ opacity: 1, scale: 1 }}
               className="mt-7 rounded-2xl bg-[#ffd3e7] p-4 text-center font-semibold text-[#a32967]"
               initial={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
             >
               The big day has arrived 💍✨
             </motion.p>
@@ -822,12 +874,9 @@ function App() {
         </motion.section>
 
         <motion.section
+          {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="story"
-          initial="hidden"
-          variants={sectionFade}
-          viewport={{ once: true, amount: 0.2 }}
-          whileInView="visible"
         >
           <h2 className="section-title">Our Love Story 💞</h2>
           <p className="mt-3 text-center text-base leading-relaxed text-[#8a3a62] md:text-lg">A journey written by destiny</p>
@@ -843,12 +892,9 @@ function App() {
         </motion.section>
 
         <motion.section
+          {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="family"
-          initial="hidden"
-          variants={sectionFade}
-          viewport={{ once: true, amount: 0.2 }}
-          whileInView="visible"
         >
           <h2 className="section-title">Families & Blessings 👨‍👩‍👧‍👦</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
@@ -858,12 +904,9 @@ function App() {
         </motion.section>
 
         <motion.section
+          {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="gallery"
-          initial="hidden"
-          variants={sectionFade}
-          viewport={{ once: true, amount: 0.2 }}
-          whileInView="visible"
         >
           <h2 className="section-title">Gallery 📸</h2>
           <p className="mt-3 text-center text-base leading-relaxed text-[#8a3a62] md:text-lg">Our moments, framed with love</p>
@@ -890,12 +933,9 @@ function App() {
         </motion.section>
 
         <motion.section
+          {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="blessings"
-          initial="hidden"
-          variants={sectionFade}
-          viewport={{ once: true, amount: 0.2 }}
-          whileInView="visible"
         >
           <h2 className="section-title">Bless the Couple 🙏</h2>
           <form
@@ -952,8 +992,9 @@ function App() {
               <motion.div
                 key={entry.id ?? `${entry.name}-${index}`}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-[#ffb1d1] bg-[#fff9fd] p-4 shadow-lg"
+                className="rounded-2xl border border-[#ffb1d1] bg-[#fff9fd] p-4 shadow-md"
                 initial={{ opacity: 0, y: 18 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
               >
                 <p className="font-serif text-xl font-semibold tracking-wide text-gray-900">{entry.name}</p>
                 <p className="mt-3 leading-relaxed text-[#8a3a62]">💌 {entry.message}</p>
@@ -985,15 +1026,12 @@ function App() {
         </motion.section>
 
         <motion.section
+          {...sectionMotionProps}
           className="section-card section-card-heart mt-20 mb-6 md:mb-8"
           id="location"
-          initial="hidden"
-          variants={sectionFade}
-          viewport={{ once: true, amount: 0.2 }}
-          whileInView="visible"
         >
           <h2 className="section-title">Venue Location 🗺️</h2>
-          <div className="mt-8 rounded-2xl border border-[#ff8fbc80] bg-[#fff8fc] p-4 shadow-2xl">
+          <div className="mt-8 rounded-2xl border border-[#ff8fbc80] bg-[#fff8fc] p-4 shadow-lg">
             <iframe
               allowFullScreen=""
               className="w-full rounded-xl border-0"
@@ -1021,7 +1059,7 @@ function App() {
       <motion.footer
         className="relative overflow-hidden border-t border-[#ff8fbc80] bg-[#fff1f7] px-4 py-6 text-center md:py-8"
         initial={{ opacity: 0, y: 18 }}
-        transition={{ duration: 0.7, ease: 'easeOut' }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
         viewport={{ once: true, amount: 0.4 }}
         whileInView={{ opacity: 1, y: 0 }}
       >
@@ -1053,6 +1091,7 @@ function App() {
             animate={{ scale: 1, opacity: 1 }}
             className="max-w-[92vw] text-center"
             initial={{ scale: 0.93, opacity: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
           >
             <img
               alt={activeImage.alt}

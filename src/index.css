@@ -31,12 +31,12 @@ body {
   background: rgba(255, 255, 255, 0.82);
   border-radius: 1.5rem;
   padding: 1.5rem;
-  box-shadow: 0 8px 18px rgba(145, 41, 93, 0.1);
+  box-shadow: 0 6px 14px rgba(145, 41, 93, 0.08);
   transition: box-shadow 0.3s ease;
 }
 
 .section-card:hover {
-  box-shadow: 0 12px 24px rgba(145, 41, 93, 0.14);
+  box-shadow: 0 10px 20px rgba(145, 41, 93, 0.11);
 }
 
 .section-title {
@@ -93,12 +93,12 @@ body {
     radial-gradient(circle, rgba(255, 247, 220, 0.45) 0 4px, transparent 6px),
     radial-gradient(circle, rgba(212, 175, 55, 0.35) 0 6px, transparent 9px);
   background-size: 180px 180px, 220px 220px, 260px 260px;
-  animation: petalsFloat 22s linear infinite;
+  animation: petalsFloat 30s linear infinite;
 }
 
 .petals-layer::after {
-  animation-duration: 30s;
-  opacity: 0.65;
+  animation-duration: 40s;
+  opacity: 0.5;
 }
 
 @keyframes petalsFloat {
@@ -125,11 +125,11 @@ body {
 .hearts-float span {
   position: absolute;
   color: #f283cd;
-  text-shadow: 0 0 10px rgba(185, 56, 161, 0.6);
+  text-shadow: 0 0 6px rgba(185, 56, 161, 0.45);
   font-size: 26px;
   animation: heartRise linear infinite;
   will-change: transform, opacity;
-  opacity: 0.8;
+  opacity: 0.65;
 }
 
 .heart-burst {
@@ -197,7 +197,7 @@ body {
   overflow: hidden;
   background: #fff8fc;
   border: 3px solid rgba(255, 132, 181, 0.5);
-  box-shadow: 0 16px 30px rgba(166, 45, 107, 0.2);
+  box-shadow: 0 10px 20px rgba(166, 45, 107, 0.15);
 }
 
 .heart-photo-wrap img {
@@ -220,4 +220,35 @@ body {
 
 .section-card-heart {
   position: relative;
+}
+
+@media (max-width: 767px) {
+  .petals-layer::before,
+  .petals-layer::after,
+  .hearts-float {
+    display: none;
+  }
+
+  .section-card {
+    box-shadow: 0 5px 12px rgba(145, 41, 93, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .petals-layer::before,
+  .petals-layer::after,
+  .hearts-float,
+  .heart-burst {
+    display: none;
+  }
+
+  .nav-pill-link::after,
+  .section-card,
+  .heart-photo-wrap img {
+    transition: none;
+  }
 }
