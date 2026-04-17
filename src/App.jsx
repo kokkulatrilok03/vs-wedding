@@ -84,7 +84,11 @@ const MUSIC_PREF_KEY = 'wedding_music_pref'
 const MUSIC_VOLUME_KEY = 'wedding_music_volume'
 const DEFAULT_MUSIC_VOLUME = 1
 const BLESSINGS_PAGE_SIZE = 20
-const BLESSINGS_REQUEST_TIMEOUT_MS = 7000
+const BLESSINGS_REQUEST_TIMEOUT_MS = 15000
+const BLESSINGS_INITIAL_FETCH_RETRIES = 2
+const BLESSINGS_LOAD_MORE_RETRIES = 1
+const BLESSINGS_RETRY_DELAY_MS = 1200
+const BLESSINGS_RECOVERY_RETRY_MS = 2500
 const MUSIC_SOURCES = [
   '/music/atlasaudio-piano-romantic-510293.mp3',
 ]
@@ -157,6 +161,12 @@ function getTimeLeft() {
   }
 }
 
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
 function App() {
   const prefersReducedMotion = useReducedMotion()
   const { scrollY, scrollYProgress } = useScroll()
@@ -206,6 +216,12 @@ function App() {
   const fadeTimerRef = useRef(null)
   const confettiHideTimerRef = useRef(null)
   const hasHydratedBlessingsCacheRef = useRef(false)
+  const blessingsRetryTimerRef = useRef(null)
+  const blessingsRef = useRef([])
+
+  useEffect(() => {
+    blessingsRef.current = blessings
+  }, [blessings])
 
   const triggerConfettiBurst = useCallback((durationMs = 6000, force = false) => {
     if (useLiteMotion && !force) return
@@ -235,6 +251,10 @@ function App() {
 
   useEffect(() => () => {
     if (confettiHideTimerRef.current) clearTimeout(confettiHideTimerRef.current)
+  }, [])
+
+  useEffect(() => () => {
+    if (blessingsRetryTimerRef.current) clearTimeout(blessingsRetryTimerRef.current)
   }, [])
 
   useEffect(() => {
@@ -319,6 +339,10 @@ function App() {
   }, [])
 
   const fetchBlessings = useCallback(async (page = 1, append = false) => {
+    if (!append && blessingsRetryTimerRef.current) {
+      clearTimeout(blessingsRetryTimerRef.current)
+      blessingsRetryTimerRef.current = null
+    }
     const cached = !append ? getCachedBlessings() : null
     if (!append && !hasHydratedBlessingsCacheRef.current) {
       if (cached?.items?.length) {
@@ -335,20 +359,38 @@ function App() {
     } else if (!cached?.items?.length) {
       setIsBlessingsLoading(true)
     }
-    let timeout
+    let receivedBackendResponse = false
     try {
-      const controller = new AbortController()
-      timeout = setTimeout(() => controller.abort(), BLESSINGS_REQUEST_TIMEOUT_MS)
-      const fetchBlessingsPage = async () => fetch(`${API_BASE}/blessings?page=${page}&limit=${BLESSINGS_PAGE_SIZE}`, {
-        headers: { 'X-Client-Id': clientId },
-        signal: controller.signal,
-      })
-      let response = await fetchBlessingsPage()
-      if (!response.ok && !append && page === 1) {
-        response = await fetchBlessingsPage()
+      const maxRetries = append ? BLESSINGS_LOAD_MORE_RETRIES : BLESSINGS_INITIAL_FETCH_RETRIES
+      let response = null
+      let attemptError = null
+      for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), BLESSINGS_REQUEST_TIMEOUT_MS)
+        try {
+          response = await fetch(`${API_BASE}/blessings?page=${page}&limit=${BLESSINGS_PAGE_SIZE}`, {
+            headers: { 'X-Client-Id': clientId },
+            signal: controller.signal,
+          })
+          if (response.ok) {
+            attemptError = null
+            break
+          }
+          attemptError = new Error('Failed to fetch blessings')
+        } catch (error) {
+          attemptError = error instanceof Error ? error : new Error('Failed to fetch blessings')
+        } finally {
+          clearTimeout(timeout)
+        }
+
+        if (attempt < maxRetries) {
+          await wait(BLESSINGS_RETRY_DELAY_MS * (attempt + 1))
+        }
       }
-      if (!response.ok) throw new Error('Failed to fetch blessings')
+
+      if (!response?.ok) throw attemptError ?? new Error('Failed to fetch blessings')
       const payload = await response.json()
+      receivedBackendResponse = true
       const rows = Array.isArray(payload)
         ? payload
         : Array.isArray(payload?.items)
@@ -368,20 +410,33 @@ function App() {
       setHasMoreBlessings(nextHasMore)
       setCachedBlessings(mergedItems, page, nextHasMore)
       setBlessingsError('')
-    } catch {
+    } catch (error) {
       if (!append) {
-        setBlessings([])
-        setHasMoreBlessings(false)
-        setBlessingsError('')
+        const hasVisibleBlessings = Boolean(cached?.items?.length) || blessingsRef.current.length > 0
+        if (hasVisibleBlessings) {
+          setBlessingsError(
+            error instanceof Error && error.name === 'AbortError'
+              ? 'Server is taking too long to respond. Please try again in a moment.'
+              : 'Unable to load latest blessings right now. Please try again.',
+          )
+        } else {
+          setBlessings([])
+          setHasMoreBlessings(false)
+          setBlessingsError('')
+          blessingsRetryTimerRef.current = setTimeout(() => {
+            blessingsRetryTimerRef.current = null
+            fetchBlessings(1, false)
+          }, BLESSINGS_RECOVERY_RETRY_MS)
+        }
       } else {
         setBlessingsError('Unable to load more blessings right now. Please try again.')
       }
     } finally {
-      if (timeout) clearTimeout(timeout)
       if (append) {
         setIsLoadingMoreBlessings(false)
       } else {
-        setIsBlessingsLoading(false)
+        const hasVisibleBlessings = Boolean(cached?.items?.length) || blessingsRef.current.length > 0
+        setIsBlessingsLoading(!receivedBackendResponse && !hasVisibleBlessings)
       }
     }
   }, [clientId])
