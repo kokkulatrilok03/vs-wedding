@@ -212,8 +212,8 @@ function App() {
   const confettiHideTimerRef = useRef(null)
   const hasHydratedBlessingsCacheRef = useRef(false)
 
-  const triggerConfettiBurst = useCallback((durationMs = 6000) => {
-    if (useLiteMotion) return
+  const triggerConfettiBurst = useCallback((durationMs = 6000, force = false) => {
+    if (useLiteMotion && !force) return
     if (confettiHideTimerRef.current) {
       clearTimeout(confettiHideTimerRef.current)
       confettiHideTimerRef.current = null
@@ -448,7 +448,7 @@ function App() {
 
   const openInvitation = async () => {
     setIsIntroOpen(false)
-    triggerConfettiBurst()
+    triggerConfettiBurst(6000, true)
     await startMusicWithFade()
     if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'playing')
   }
