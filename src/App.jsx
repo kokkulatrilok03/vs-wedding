@@ -433,7 +433,7 @@ function App() {
             fadeTimerRef.current = null
           }
         }, 120)
-        return
+        return true
       } catch {
         // Try next source.
       }
@@ -444,20 +444,41 @@ function App() {
     } catch {
       // no-op
     }
+    return false
   }, [isMuted, musicSourceIndex, musicVolume])
+
+  const requestMusicRetryOnGesture = useCallback(() => {
+    const retry = async () => {
+      const started = await startMusicWithFade()
+      if (started && typeof window !== 'undefined') {
+        localStorage.setItem(MUSIC_PREF_KEY, 'playing')
+      }
+      window.removeEventListener('click', retry)
+      window.removeEventListener('touchstart', retry)
+      window.removeEventListener('keydown', retry)
+    }
+    window.addEventListener('click', retry, { once: true })
+    window.addEventListener('touchstart', retry, { once: true })
+    window.addEventListener('keydown', retry, { once: true })
+  }, [startMusicWithFade])
 
   const openInvitation = async () => {
     setIsIntroOpen(false)
     triggerConfettiBurst(6000, true)
-    await startMusicWithFade()
-    if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'playing')
+    const started = await startMusicWithFade()
+    if (started) {
+      if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'playing')
+    } else {
+      requestMusicRetryOnGesture()
+    }
   }
 
   useEffect(() => {
     if (!resumeMusicRequestedRef.current) return
     const kickstart = async () => {
       if (!isMusicPlaying) {
-        await startMusicWithFade()
+        const started = await startMusicWithFade()
+        if (!started) return
       }
       resumeMusicRequestedRef.current = false
       window.removeEventListener('click', kickstart)
@@ -798,8 +819,8 @@ function App() {
           <motion.div
             className="absolute inset-2 rounded-[2.4rem] bg-cover bg-center md:inset-3"
             style={{
-              y: useLiteMotion ? 0 : heroY,
-              scale: useLiteMotion ? 1.02 : heroScale,
+              y: heroY,
+              scale: heroScale,
               backgroundImage: `linear-gradient(rgba(67,18,43,0.35), rgba(67,18,43,0.58)), url('${couplePhotos.hero}')`,
             }}
           />
