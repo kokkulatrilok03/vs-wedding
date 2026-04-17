@@ -88,11 +88,6 @@ const BLESSINGS_REQUEST_TIMEOUT_MS = 7000
 const MUSIC_SOURCES = [
   '/music/atlasaudio-piano-romantic-510293.mp3',
 ]
-const initialBlessings = [
-  { name: 'Family Friend', message: 'Wishing you both a lifetime of laughter, love, and beautiful memories.', editable: false },
-  { name: 'Well Wisher', message: 'May your marriage be filled with joy, blessings, and endless togetherness.', editable: false },
-]
-
 function getClientId() {
   if (typeof window === 'undefined') return ''
   const existing = localStorage.getItem(CLIENT_ID_STORAGE_KEY)
@@ -181,7 +176,7 @@ function App() {
   })
   const [blessingName, setBlessingName] = useState('')
   const [blessingMessage, setBlessingMessage] = useState('')
-  const [blessings, setBlessings] = useState(initialBlessings)
+  const [blessings, setBlessings] = useState([])
   const [clientId] = useState(() => getClientId())
   const [ownedBlessingIds, setOwnedBlessingIds] = useState(() => getOwnedBlessingIds())
   const [isBlessingsLoading, setIsBlessingsLoading] = useState(true)
@@ -344,10 +339,14 @@ function App() {
     try {
       const controller = new AbortController()
       timeout = setTimeout(() => controller.abort(), BLESSINGS_REQUEST_TIMEOUT_MS)
-      const response = await fetch(`${API_BASE}/blessings?page=${page}&limit=${BLESSINGS_PAGE_SIZE}`, {
+      const fetchBlessingsPage = async () => fetch(`${API_BASE}/blessings?page=${page}&limit=${BLESSINGS_PAGE_SIZE}`, {
         headers: { 'X-Client-Id': clientId },
         signal: controller.signal,
       })
+      let response = await fetchBlessingsPage()
+      if (!response.ok && !append && page === 1) {
+        response = await fetchBlessingsPage()
+      }
       if (!response.ok) throw new Error('Failed to fetch blessings')
       const payload = await response.json()
       const rows = Array.isArray(payload)
@@ -371,9 +370,9 @@ function App() {
       setBlessingsError('')
     } catch {
       if (!append) {
-        setBlessings(initialBlessings)
+        setBlessings([])
         setHasMoreBlessings(false)
-        setBlessingsError('Unable to load latest blessings. Showing sample blessings.')
+        setBlessingsError('')
       } else {
         setBlessingsError('Unable to load more blessings right now. Please try again.')
       }
@@ -1006,6 +1005,9 @@ function App() {
           </form>
           {blessingsError && <p className="mt-4 text-sm text-[#a32967]">{blessingsError}</p>}
           {isBlessingsLoading && <p className="mt-4 text-sm leading-relaxed text-[#8a3a62]">Loading blessings...</p>}
+          {!isBlessingsLoading && blessings.length === 0 && (
+            <p className="mt-4 text-sm leading-relaxed text-[#8a3a62]">No blessings yet. Be the first to add one.</p>
+          )}
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {blessings.map((entry, index) => {
               const canEdit = Boolean(entry.editable) || ownedBlessingIds.includes(entry.id)
