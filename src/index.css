@@ -225,7 +225,7 @@ body {
 @media (max-width: 767px) {
   .petals-layer::before,
   .petals-layer::after,
-  .hearts-float {
+  .petals-layer {
     display: none;
   }
 

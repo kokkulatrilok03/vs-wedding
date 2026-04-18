@@ -208,7 +208,7 @@ function App() {
   const [isMuted] = useState(false)
   const [musicSourceIndex, setMusicSourceIndex] = useState(0)
   const isSmallScreen = screenSize.width < 768
-  const useLiteMotion = prefersReducedMotion || isSmallScreen
+  const useLiteMotion = prefersReducedMotion 
 
   const audioRef = useRef(null)
   const hasTriggeredArrivalRef = useRef(false)
@@ -258,16 +258,15 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem(MUSIC_PREF_KEY) : null
-    if (saved === 'playing') {
-      resumeMusicRequestedRef.current = true
-    }
-  }, [])
-
-  useEffect(() => {
     if (typeof window === 'undefined') return
     localStorage.setItem(MUSIC_VOLUME_KEY, String(DEFAULT_MUSIC_VOLUME))
   }, [])
+
+  useEffect(() => {
+    if (!audioRef.current) return
+    audioRef.current.src = MUSIC_SOURCES[musicSourceIndex]
+    audioRef.current.load()
+  }, [musicSourceIndex])
 
   useEffect(() => {
     if (!audioRef.current) return
@@ -467,87 +466,34 @@ function App() {
   const startMusicWithFade = useCallback(async () => {
     if (!audioRef.current) return
     if (fadeTimerRef.current) clearInterval(fadeTimerRef.current)
-    for (let attempt = 0; attempt < MUSIC_SOURCES.length; attempt += 1) {
-      const sourceIndex = (musicSourceIndex + attempt) % MUSIC_SOURCES.length
-      audioRef.current.src = MUSIC_SOURCES[sourceIndex]
-      audioRef.current.load()
-      try {
-        audioRef.current.volume = 0
-        audioRef.current.muted = false
-        await audioRef.current.play()
-        setMusicSourceIndex(sourceIndex)
-        setIsMusicPlaying(true)
-        const targetVolume = isMuted ? 0 : musicVolume
-        let vol = 0
-        fadeTimerRef.current = setInterval(() => {
-          vol = Math.min(vol + 0.06, targetVolume)
-          if (audioRef.current) audioRef.current.volume = vol
-          if (vol >= targetVolume) {
-            clearInterval(fadeTimerRef.current)
-            fadeTimerRef.current = null
-          }
-        }, 120)
-        return true
-      } catch {
-        // Try next source.
-      }
-    }
-    try {
-      setIsMusicPlaying(false)
-      if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'paused')
-    } catch {
-      // no-op
-    }
-    return false
-  }, [isMuted, musicSourceIndex, musicVolume])
 
-  const requestMusicRetryOnGesture = useCallback(() => {
-    const retry = async () => {
-      const started = await startMusicWithFade()
-      if (started && typeof window !== 'undefined') {
-        localStorage.setItem(MUSIC_PREF_KEY, 'playing')
-      }
-      window.removeEventListener('click', retry)
-      window.removeEventListener('touchstart', retry)
-      window.removeEventListener('keydown', retry)
+    audioRef.current.muted = false
+    audioRef.current.volume = 0
+    try {
+      await audioRef.current.play()
+      setIsMusicPlaying(true)
+      const targetVolume = isMuted ? 0 : musicVolume
+      let vol = 0
+      fadeTimerRef.current = setInterval(() => {
+        vol = Math.min(vol + 0.06, targetVolume)
+        if (audioRef.current) audioRef.current.volume = vol
+        if (vol >= targetVolume) {
+          clearInterval(fadeTimerRef.current)
+          fadeTimerRef.current = null
+        }
+      }, 120)
+      return true
+    } catch {
+      setIsMusicPlaying(false)
+      return false
     }
-    window.addEventListener('click', retry, { once: true })
-    window.addEventListener('touchstart', retry, { once: true })
-    window.addEventListener('keydown', retry, { once: true })
-  }, [startMusicWithFade])
+  }, [isMuted, musicSourceIndex, musicVolume])
 
   const openInvitation = async () => {
     setIsIntroOpen(false)
     triggerConfettiBurst(6000, true)
-    const started = await startMusicWithFade()
-    if (started) {
-      if (typeof window !== 'undefined') localStorage.setItem(MUSIC_PREF_KEY, 'playing')
-    } else {
-      requestMusicRetryOnGesture()
-    }
+    await startMusicWithFade()
   }
-
-  useEffect(() => {
-    if (!resumeMusicRequestedRef.current) return
-    const kickstart = async () => {
-      if (!isMusicPlaying) {
-        const started = await startMusicWithFade()
-        if (!started) return
-      }
-      resumeMusicRequestedRef.current = false
-      window.removeEventListener('click', kickstart)
-      window.removeEventListener('touchstart', kickstart)
-      window.removeEventListener('keydown', kickstart)
-    }
-    window.addEventListener('click', kickstart, { once: true })
-    window.addEventListener('touchstart', kickstart, { once: true })
-    window.addEventListener('keydown', kickstart, { once: true })
-    return () => {
-      window.removeEventListener('click', kickstart)
-      window.removeEventListener('touchstart', kickstart)
-      window.removeEventListener('keydown', kickstart)
-    }
-  }, [isMusicPlaying, startMusicWithFade])
 
   const sectionFade = {
     hidden: { opacity: 0, y: 24 },
