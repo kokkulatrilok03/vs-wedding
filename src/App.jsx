@@ -10,6 +10,7 @@ import {
   FaMapMarkerAlt,
   FaTimes,
 } from 'react-icons/fa'
+import { Analytics } from '@vercel/analytics/react'
 
 const weddingDate = new Date('2026-04-29T11:45:00+05:30')
 
@@ -1149,6 +1150,7 @@ function App() {
           </button>
         </div>
       )}
+      <Analytics />
     </div>
   )
 }
