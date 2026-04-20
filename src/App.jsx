@@ -828,7 +828,7 @@ function App() {
           <div className="relative z-10 rounded-2xl bg-black/30 px-4 py-2">
             <p className="font-handwritten flex items-center justify-center gap-2 text-2xl text-[#ffd6ea]">
               <FaHeart className="text-lg text-[#ff9bc7]" />
-              Royal Indian Wedding
+              Traditional Indian Wedding
               <FaHeart className="text-lg text-[#ff9bc7]" />
             </p>
             <h1 className="mt-4 font-serif text-4xl font-semibold tracking-wide leading-tight text-[#fff7e4] drop-shadow-lg md:text-7xl">
@@ -961,7 +961,7 @@ function App() {
           className="section-card section-card-heart mt-20"
           id="blessings"
         >
-          <h2 className="section-title">Bless the Couple 🙏</h2>
+          <h2 className="section-title">Love & Blessings</h2>
           <form
             className="mt-7 grid gap-4 md:grid-cols-2"
             onSubmit={handleBlessingSubmit}
