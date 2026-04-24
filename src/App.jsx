@@ -501,13 +501,20 @@ function App() {
     visible: { opacity: 1, y: 0 },
   }
   const sectionTransition = { duration: 0.5, ease: 'easeOut' }
-  const sectionMotionProps = {
-    initial: 'hidden',
-    whileInView: 'visible',
-    viewport: { once: true, amount: 0.2 },
-    variants: sectionFade,
-    transition: sectionTransition,
-  }
+  const sectionMotionProps = useLiteMotion
+    ? {
+        initial: false,
+        animate: 'visible',
+        variants: sectionFade,
+        transition: sectionTransition,
+      }
+    : {
+        initial: 'hidden',
+        whileInView: 'visible',
+        viewport: { once: true, amount: 0.1 },
+        variants: sectionFade,
+        transition: sectionTransition,
+      }
   void motion
 
   const activeImage = selectedImageIndex !== null ? couplePhotos.gallery[selectedImageIndex] : null
