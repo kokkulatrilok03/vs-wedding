@@ -170,6 +170,15 @@ function wait(ms) {
 
 function App() {
   const prefersReducedMotion = useReducedMotion()
+  const isIOSDevice = useMemo(() => {
+    if (typeof navigator === 'undefined') return false
+    const ua = navigator.userAgent || ''
+    const platform = navigator.platform || ''
+    const maxTouchPoints = navigator.maxTouchPoints || 0
+    const isIOSLike = /iPad|iPhone|iPod/.test(ua)
+    const isTouchMac = platform === 'MacIntel' && maxTouchPoints > 1
+    return isIOSLike || isTouchMac
+  }, [])
   const { scrollY, scrollYProgress } = useScroll()
   const heroY = useTransform(scrollY, [0, 600], [0, -110])
   const heroScale = useTransform(scrollY, [0, 500], [1.05, 1.15])
@@ -209,7 +218,7 @@ function App() {
   const [isMuted] = useState(false)
   const [musicSourceIndex, setMusicSourceIndex] = useState(0)
   const isSmallScreen = screenSize.width < 768
-  const useLiteMotion = prefersReducedMotion 
+  const useLiteMotion = prefersReducedMotion || isIOSDevice
 
   const audioRef = useRef(null)
   const hasTriggeredArrivalRef = useRef(false)
@@ -492,7 +501,7 @@ function App() {
 
   const openInvitation = async () => {
     setIsIntroOpen(false)
-    triggerConfettiBurst(6000, true)
+    triggerConfettiBurst(6000, !useLiteMotion)
     await startMusicWithFade()
   }
 

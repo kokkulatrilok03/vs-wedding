@@ -20,6 +20,16 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+a,
+button,
+[role="button"],
+input,
+textarea,
+select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 #root {
   min-height: auto;
   margin: 0;
@@ -250,5 +260,22 @@ body {
   .section-card,
   .heart-photo-wrap img {
     transition: none;
+  }
+}
+
+/* iOS Safari performance and touch stability */
+@supports (-webkit-touch-callout: none) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .petals-layer,
+  .hearts-float {
+    display: none;
+  }
+
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 }
