@@ -218,15 +218,17 @@ function App() {
   const [isMuted] = useState(false)
   const [musicSourceIndex, setMusicSourceIndex] = useState(0)
   const isSmallScreen = screenSize.width < 768
-  const useLiteMotion = prefersReducedMotion
-  const useInViewSafeMode = prefersReducedMotion || isIOSDevice
-  const confettiPieces = isIOSDevice ? 72 : 140
+  const usePerformanceMode = prefersReducedMotion || isIOSDevice
+  const useLiteMotion = usePerformanceMode
+  const useInViewSafeMode = usePerformanceMode
+  const confettiPieces = isIOSDevice ? 36 : 140
+  const confettiDurationMs = isIOSDevice ? 2600 : 6000
   const visibleFloatingHearts = useMemo(() => {
     if (!isIOSDevice) return floatingHearts
-    return floatingHearts.slice(0, 5).map((heart) => ({
+    return floatingHearts.slice(0, 3).map((heart) => ({
       ...heart,
-      size: `${Math.max(16, Number.parseInt(heart.size, 10) - 4)}px`,
-      duration: `${Number.parseInt(heart.duration, 10) + 10}s`,
+      size: `${Math.max(15, Number.parseInt(heart.size, 10) - 6)}px`,
+      duration: `${Number.parseInt(heart.duration, 10) + 14}s`,
     }))
   }, [isIOSDevice])
 
@@ -511,7 +513,7 @@ function App() {
 
   const openInvitation = async () => {
     setIsIntroOpen(false)
-    triggerConfettiBurst(6000, !useLiteMotion)
+    triggerConfettiBurst(confettiDurationMs, true)
     await startMusicWithFade()
   }
 
@@ -607,7 +609,17 @@ function App() {
 
   return (
     <div className="relative flex flex-col overflow-x-hidden bg-[#fff1f7] pb-0 font-sans text-[#7a2e57]">
-      {showConfetti && <Confetti width={screenSize.width} height={screenSize.height} numberOfPieces={confettiPieces} recycle={false} />}
+      {showConfetti && (
+        <Confetti
+          width={screenSize.width}
+          height={screenSize.height}
+          numberOfPieces={confettiPieces}
+          recycle={false}
+          gravity={isIOSDevice ? 0.2 : 0.27}
+          initialVelocityY={isIOSDevice ? 7 : 10}
+          tweenDuration={isIOSDevice ? 3000 : 5000}
+        />
+      )}
       <audio
         ref={audioRef}
         loop
@@ -655,7 +667,7 @@ function App() {
 
       {!prefersReducedMotion && (
         <>
-          <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
+          <div className={`pointer-events-none absolute inset-0 overflow-hidden opacity-40${isIOSDevice ? ' ios-petals-layer' : ''}`}>
             <div className="petals-layer" />
           </div>
           <div aria-hidden="true" className={`hearts-float${isIOSDevice ? ' hearts-float-ios' : ''}`}>
@@ -685,7 +697,7 @@ function App() {
       >
         <motion.div
           className="pointer-events-none absolute top-0 left-0 h-[2px] w-full origin-left rounded-full bg-gradient-to-r from-[#ff7eb6] via-[#ff5ea1] to-[#c83f78]"
-          style={{ scaleX: progressScaleX }}
+          style={isIOSDevice ? undefined : { scaleX: progressScaleX }}
         />
         <nav
           className={`pointer-events-auto flex items-center justify-between gap-3 rounded-full border px-5 py-3 transition-all duration-300 md:gap-4 md:px-6 md:py-3.5 ${
