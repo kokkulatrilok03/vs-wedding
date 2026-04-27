@@ -33,6 +33,7 @@ const CLOUDINARY_BASE = 'https://res.cloudinary.com/dzdcwy4m5/image/upload'
 
 const couplePhotos = {
   hero: `${CLOUDINARY_BASE}/c_fill,q_auto,f_auto,w_2000/v1776106508/WhatsApp_Image_2026-04-14_at_12.12.02_AM_xjofxd.jpg`,
+  heroMobile: `${CLOUDINARY_BASE}/c_fill,q_auto,f_auto,w_1100/v1776106508/WhatsApp_Image_2026-04-14_at_12.12.02_AM_xjofxd.jpg`,
   gallery: [
     {
       src: `${CLOUDINARY_BASE}/c_fill,q_auto,f_auto,w_900/v1776106508/WhatsApp_Image_2026-04-14_at_12.12.02_AM_xjofxd.jpg`,
@@ -318,6 +319,7 @@ function App() {
   useEffect(() => {
     const allSections = [...primaryNav, ...extraNav]
     let rafId = 0
+    let throttleTimer = 0
     let ticking = false
 
     const updateActive = () => {
@@ -344,6 +346,14 @@ function App() {
     }
 
     const onScroll = () => {
+      if (isIOSDevice) {
+        if (throttleTimer) return
+        throttleTimer = window.setTimeout(() => {
+          throttleTimer = 0
+          updateActive()
+        }, 120)
+        return
+      }
       if (ticking) return
       ticking = true
       rafId = window.requestAnimationFrame(updateActive)
@@ -356,8 +366,9 @@ function App() {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
       window.cancelAnimationFrame(rafId)
+      if (throttleTimer) window.clearTimeout(throttleTimer)
     }
-  }, [])
+  }, [isIOSDevice])
 
   const fetchBlessings = useCallback(async (page = 1, append = false) => {
     if (!append && blessingsRetryTimerRef.current) {
@@ -541,6 +552,7 @@ function App() {
   const activeImage = selectedImageIndex !== null ? couplePhotos.gallery[selectedImageIndex] : null
   const hasArrived = Object.values(timeLeft).every((value) => value === 0)
   const welcomeText = guestName ? `Welcome, ${guestName} 💖` : 'Welcome, Dear Guest 💖'
+  const heroImage = isSmallScreen ? couplePhotos.heroMobile : couplePhotos.hero
   const handleNavClick = (event, id) => {
     event.preventDefault()
     const target = document.getElementById(id)
@@ -640,7 +652,7 @@ function App() {
             className="absolute inset-0 bg-cover bg-center"
             initial={{ scale: 1.08, opacity: 0.6 }}
             style={{
-              backgroundImage: `linear-gradient(rgba(74, 16, 48, 0.48), rgba(74, 16, 48, 0.68)), url('${couplePhotos.hero}')`,
+              backgroundImage: `linear-gradient(rgba(74, 16, 48, 0.48), rgba(74, 16, 48, 0.68)), url('${heroImage}')`,
               filter: 'blur(4px)',
             }}
           />
@@ -858,9 +870,9 @@ function App() {
           <motion.div
             className="absolute inset-2 rounded-[2.4rem] bg-cover bg-center md:inset-3"
             style={{
-              y: heroY,
-              scale: heroScale,
-              backgroundImage: `linear-gradient(rgba(67,18,43,0.35), rgba(67,18,43,0.58)), url('${couplePhotos.hero}')`,
+              y: isIOSDevice ? 0 : heroY,
+              scale: isIOSDevice ? 1.03 : heroScale,
+              backgroundImage: `linear-gradient(rgba(67,18,43,0.35), rgba(67,18,43,0.58)), url('${heroImage}')`,
             }}
           />
           <div className="pointer-events-none absolute inset-2 rounded-[2.4rem] border border-[#ffd7e9] shadow-[0_14px_28px_rgba(145,41,93,0.16)] md:inset-3" />
