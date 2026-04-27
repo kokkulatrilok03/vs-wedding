@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import Confetti from 'react-confetti'
 import {
@@ -169,6 +169,79 @@ function wait(ms) {
   })
 }
 
+function stripMotionProps(props) {
+  const {
+    animate,
+    initial,
+    exit,
+    transition,
+    whileInView,
+    whileHover,
+    whileTap,
+    viewport,
+    variants,
+    layoutId,
+    children,
+    ...rest
+  } = props
+  void animate
+  void initial
+  void exit
+  void transition
+  void whileInView
+  void whileHover
+  void whileTap
+  void viewport
+  void variants
+  void layoutId
+  return { children, rest }
+}
+
+function StaticDiv(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <div {...rest}>{children}</div>
+}
+
+function StaticHeader(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <header {...rest}>{children}</header>
+}
+
+function StaticAside(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <aside {...rest}>{children}</aside>
+}
+
+function StaticUl(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <ul {...rest}>{children}</ul>
+}
+
+function StaticLi(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <li {...rest}>{children}</li>
+}
+
+function StaticP(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <p {...rest}>{children}</p>
+}
+
+function StaticSection(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <section {...rest}>{children}</section>
+}
+
+function StaticSpan(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <span {...rest}>{children}</span>
+}
+
+function StaticFooter(props) {
+  const { children, rest } = stripMotionProps(props)
+  return <footer {...rest}>{children}</footer>
+}
+
 function App() {
   const prefersReducedMotion = useReducedMotion()
   const isIOSDevice = useMemo(() => {
@@ -182,6 +255,16 @@ function App() {
   }, [])
   const isIOS = isIOSDevice
   const safeMode = prefersReducedMotion || isIOS
+  const Presence = isIOS ? Fragment : AnimatePresence
+  const MDiv = isIOS ? StaticDiv : motion.div
+  const MHeader = isIOS ? StaticHeader : motion.header
+  const MAside = isIOS ? StaticAside : motion.aside
+  const MUl = isIOS ? StaticUl : motion.ul
+  const MLi = isIOS ? StaticLi : motion.li
+  const MP = isIOS ? StaticP : motion.p
+  const MSection = isIOS ? StaticSection : motion.section
+  const MSpan = isIOS ? StaticSpan : motion.span
+  const MFooter = isIOS ? StaticFooter : motion.footer
 
   const [timeLeft, setTimeLeft] = useState(getTimeLeft())
   const [isIntroOpen, setIsIntroOpen] = useState(true)
@@ -607,7 +690,7 @@ function App() {
 
   return (
     <div className="relative flex flex-col overflow-x-hidden bg-[#fff1f7] pb-0 font-sans text-[#7a2e57]">
-      {showConfetti && (
+      {showConfetti && !isIOS && (
         <Confetti
           width={screenSize.width}
           height={screenSize.height}
@@ -627,13 +710,13 @@ function App() {
       />
 
       {isIntroOpen && (
-        <motion.div
+        <MDiv
           animate={{ opacity: 1 }}
           className="fixed inset-0 z-[70] flex items-center justify-center px-4"
           exit={{ opacity: 0 }}
           initial={{ opacity: 0 }}
         >
-          <motion.div
+          <MDiv
             animate={{ scale: 1, opacity: 1 }}
             className="absolute inset-0 bg-cover bg-center"
             initial={{ scale: 1.08, opacity: 0.6 }}
@@ -642,9 +725,11 @@ function App() {
               filter: isIOS ? 'none' : 'blur(4px)',
             }}
           />
-          <motion.div
+          <MDiv
             animate={{ y: 0, opacity: 1 }}
-            className={`relative z-10 w-full max-w-xl rounded-3xl border border-[#ffd2e7] bg-white/82 px-8 py-10 text-center shadow-[0_16px_36px_rgba(74,16,48,0.2)] md:px-12 ${
+            className={`relative z-10 w-full max-w-xl rounded-3xl border border-[#ffd2e7] px-8 py-10 text-center shadow-[0_16px_36px_rgba(74,16,48,0.2)] md:px-12 ${
+              isIOS ? 'bg-white/90' : 'bg-white/82'
+            } ${
               isIOS ? '' : 'backdrop-blur-sm'
             }`}
             initial={{ y: 30, opacity: 0 }}
@@ -655,14 +740,16 @@ function App() {
             <div className="mx-auto mt-4 h-px w-28 bg-gradient-to-r from-transparent via-[#e56aa1] to-transparent" />
             <p className="mt-5 font-serif text-3xl font-semibold tracking-wide text-[#d63384] md:text-4xl">Varsha(Rohini) ❤️ Sai Kumar</p>
             <button
-              className="mt-8 rounded-full bg-gradient-to-r from-[#ff5ea1] to-[#e34789] px-8 py-3 font-semibold text-white shadow-lg transition hover:scale-[1.02] hover:from-[#ff73ae] hover:to-[#ea5a97]"
+              className={`mt-8 rounded-full bg-gradient-to-r from-[#ff5ea1] to-[#e34789] px-8 py-3 font-semibold text-white shadow-lg ${
+                isIOS ? '' : 'transition hover:scale-[1.02] hover:from-[#ff73ae] hover:to-[#ea5a97]'
+              }`}
               onClick={openInvitation}
               type="button"
             >
               Open Invitation
             </button>
-          </motion.div>
-        </motion.div>
+          </MDiv>
+        </MDiv>
       )}
 
       {!safeMode && (
@@ -689,30 +776,34 @@ function App() {
       )}
 
       {!isIntroOpen && (
-      <motion.header
+      <MHeader
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         className="pointer-events-none fixed top-4 left-1/2 z-50 w-[90%] max-w-5xl -translate-x-1/2"
         initial={{ opacity: 0, y: -14, filter: 'blur(10px)' }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        <motion.div
+        <MDiv
           className="pointer-events-none absolute top-0 left-0 h-[2px] w-full origin-left rounded-full bg-gradient-to-r from-[#ff7eb6] via-[#ff5ea1] to-[#c83f78]"
           style={undefined}
         />
         <nav
           className={`pointer-events-auto flex items-center justify-between gap-3 rounded-full border px-5 py-3 transition-all duration-300 md:gap-4 md:px-6 md:py-3.5 ${
             isNavElevated
-              ? 'border-white/45 bg-white/35 shadow-lg backdrop-blur-sm'
+              ? isIOS
+                ? 'border-white/45 bg-white/90 shadow-lg'
+                : 'border-white/45 bg-white/35 shadow-lg backdrop-blur-sm'
               : 'border-white/20 bg-white/15 shadow-[0_6px_14px_rgba(156,58,103,0.08)]'
           }`}
           role="navigation"
         >
           <a
-            className="group flex shrink-0 items-center gap-1 font-serif text-lg font-semibold tracking-[0.18em] text-[#8b2252] transition duration-300 hover:scale-105 hover:text-[#ff5ea1]"
+            className={`group flex shrink-0 items-center gap-1 font-serif text-lg font-semibold tracking-[0.18em] text-[#8b2252] ${
+              isIOS ? '' : 'transition duration-300 hover:scale-105 hover:text-[#ff5ea1]'
+            }`}
             href="#hero"
             onClick={(event) => handleNavClick(event, 'hero')}
           >
-            V <FaHeart className="text-sm text-[#ff5ea1] transition group-hover:scale-110" aria-hidden /> S
+            V <FaHeart className={`text-sm text-[#ff5ea1] ${isIOS ? '' : 'transition group-hover:scale-110'}`} aria-hidden /> S
           </a>
 
           <ul className="hidden flex-1 list-none items-center justify-center gap-8 lg:flex">
@@ -721,7 +812,9 @@ function App() {
               return (
                 <li key={item.id}>
                   <a
-                    className={`nav-pill-link group relative font-serif text-[0.95rem] font-semibold transition duration-300 hover:scale-105 hover:text-[#ff5ea1] ${
+                    className={`nav-pill-link group relative font-serif text-[0.95rem] font-semibold ${
+                      isIOS ? '' : 'transition duration-300 hover:scale-105 hover:text-[#ff5ea1]'
+                    } ${
                       active ? 'is-active text-[#8b2252]' : 'text-[#c45b8a]'
                     }`}
                     href={`#${item.id}`}
@@ -730,26 +823,26 @@ function App() {
                     <span className="relative inline-block pb-1">
                       {item.label}
                       <span className="absolute -bottom-1 left-1/2 h-[2px] w-0 -translate-x-1/2 rounded-full bg-[#ff5ea1] transition-all duration-300 group-hover:w-full" />
-                      {active && <motion.span className="absolute -bottom-1 left-1/2 h-[2px] w-full -translate-x-1/2 rounded-full bg-[#ff5ea1]" layoutId="active-nav-underline" />}
-                      {active && (
-                        <motion.span
+                      {active && !isIOS && <MSpan className="absolute -bottom-1 left-1/2 h-[2px] w-full -translate-x-1/2 rounded-full bg-[#ff5ea1]" layoutId="active-nav-underline" />}
+                      {active && !isIOS && (
+                        <MSpan
                           animate={useLiteMotion ? { scale: 1 } : { scale: [1, 1.16, 1] }}
                           className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[10px] text-[#ff5ea1]"
                           layoutId="active-nav-heart"
                           transition={{ duration: 0.5, ease: 'easeOut' }}
                         >
                           ♥
-                        </motion.span>
+                        </MSpan>
                       )}
-                      {pulsedNavId === item.id && (
-                        <motion.span
+                      {pulsedNavId === item.id && !isIOS && (
+                        <MSpan
                           animate={useLiteMotion ? { opacity: 0 } : { scale: [1, 1.45, 1], opacity: [0.9, 0.2, 0] }}
                           className="absolute -top-2 right-[-10px] text-[11px] text-[#ff5ea1]"
                           initial={{ scale: 1, opacity: 0.95 }}
                           transition={{ duration: 0.5, ease: 'easeOut' }}
                         >
                           ♥
-                        </motion.span>
+                        </MSpan>
                       )}
                     </span>
                   </a>
@@ -766,21 +859,21 @@ function App() {
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               type="button"
             >
-              <motion.span
+              <MSpan
                 animate={{ rotate: mobileMenuOpen ? 180 : 0, scale: mobileMenuOpen ? 1.08 : 1 }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
               >
                 {mobileMenuOpen ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
-              </motion.span>
+              </MSpan>
             </button>
           </div>
         </nav>
-      </motion.header>
+      </MHeader>
       )}
 
-      <AnimatePresence>
+      <Presence>
         {mobileMenuOpen && (
-          <motion.div
+          <MDiv
             animate={{ opacity: 1 }}
             className="fixed inset-0 z-[60] lg:hidden"
             exit={{ opacity: 0 }}
@@ -794,7 +887,7 @@ function App() {
               onClick={() => setMobileMenuOpen(false)}
               type="button"
             />
-            <motion.aside
+            <MAside
               animate={{ x: 0 }}
               className="absolute top-0 right-0 flex h-full w-[min(100%,20rem)] flex-col border-l border-white/30 bg-[#fff8fc]/95 shadow-xl"
               exit={{ x: '100%' }}
@@ -804,7 +897,7 @@ function App() {
               <div className="flex items-center justify-start border-b border-[#ffd6e8] px-4 py-4">
                 <span className="font-serif text-lg tracking-wide text-[#8b2252]">Menu</span>
               </div>
-              <motion.ul
+              <MUl
                 animate="visible"
                 className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
                 initial="hidden"
@@ -814,7 +907,7 @@ function App() {
                 }}
               >
                 {[...primaryNav, ...extraNav].map((item) => (
-                  <motion.li
+                  <MLi
                     key={item.id}
                     variants={{
                       hidden: { opacity: 0, x: 16 },
@@ -833,29 +926,29 @@ function App() {
                         <FaHeart className="ml-2 inline text-xs text-[#ff5ea1]" aria-hidden />
                       )}
                     </a>
-                  </motion.li>
+                  </MLi>
                 ))}
-              </motion.ul>
-            </motion.aside>
-          </motion.div>
+              </MUl>
+            </MAside>
+          </MDiv>
         )}
-      </AnimatePresence>
+      </Presence>
 
       <main className="mx-auto max-w-6xl scroll-pt-28 px-4 pb-2 pt-28 font-sans text-base text-gray-700 md:scroll-pt-32 md:px-6 md:pb-4 md:pt-32 md:text-lg">
-        <motion.p
+        <MP
           animate={{ opacity: 1, y: 0 }}
           className="relative z-30 mx-auto mb-6 w-fit rounded-full border border-[#ffb5d3] bg-[#fff8fc] px-5 py-2 text-center font-serif text-2xl font-semibold tracking-wide text-gray-900 shadow-md md:mb-8 md:px-6"
           initial={{ opacity: 0, y: 16 }}
           transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
         >
           {welcomeText}
-        </motion.p>
+        </MP>
 
         <section
           className="relative mt-2 flex min-h-[82vh] flex-col items-center justify-center rounded-[3rem] px-4 py-4 text-center md:min-h-[90vh] md:px-6 md:py-6"
           id="hero"
         >
-          <motion.div
+          <MDiv
             className="absolute inset-2 rounded-[2.4rem] bg-cover bg-center md:inset-3"
             animate={isIOS ? { opacity: 1 } : undefined}
             initial={isIOS ? { opacity: 0.92 } : undefined}
@@ -878,7 +971,7 @@ function App() {
           </div>
         </section>
 
-        <motion.section
+        <MSection
           {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="details"
@@ -901,9 +994,9 @@ function App() {
           <p className="mt-6 text-center leading-relaxed text-[#8a3a62]">
             Vinayak Nagar, Pragathi Nagar, Nizamabad, Telangana 503003
           </p>
-        </motion.section>
+        </MSection>
 
-        <motion.section
+        <MSection
           {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="countdown"
@@ -911,7 +1004,7 @@ function App() {
           <h2 className="section-title">Countdown To Muhurtham ⏳</h2>
           <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
             {timeItems.map((item) => (
-              <motion.div
+              <MDiv
                 key={item.label}
                 className="rounded-2xl border border-[#ff8fbc40] bg-white/80 p-6 text-center shadow-md transition hover:shadow-lg"
               >
@@ -920,22 +1013,22 @@ function App() {
                   <span>{item.icon}</span>
                   {item.label}
                 </p>
-              </motion.div>
+              </MDiv>
             ))}
           </div>
           {hasArrived && (
-            <motion.p
+            <MP
               animate={{ opacity: 1, scale: 1 }}
               className="mt-7 rounded-2xl bg-[#ffd3e7] p-4 text-center font-semibold text-[#a32967]"
               initial={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
               The big day has arrived 💍✨
-            </motion.p>
+            </MP>
           )}
-        </motion.section>
+        </MSection>
 
-        <motion.section
+        <MSection
           {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="story"
@@ -951,9 +1044,9 @@ function App() {
               </div>
             ))}
           </div>
-        </motion.section>
+        </MSection>
 
-        <motion.section
+        <MSection
           {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="family"
@@ -963,9 +1056,9 @@ function App() {
             <BlessingCard title="Bride Side" names={['Kokkula Raghuveer', 'Late Lavanya','R/o. Nizamabad']} />
             <BlessingCard title="Groom Side" names={['Aita Vaikuntam', 'Kousalya', 'R/o. Nizamabad']} />
           </div>
-        </motion.section>
+        </MSection>
 
-        <motion.section
+        <MSection
           {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="gallery"
@@ -980,10 +1073,10 @@ function App() {
                 onClick={() => setSelectedImageIndex(index)}
                 type="button"
               >
-                <div className="heart-photo-wrap h-[260px] w-full transition duration-500 group-hover:scale-[1.01] md:h-[290px]">
+                <div className={`heart-photo-wrap h-[260px] w-full md:h-[290px] ${isIOS ? '' : 'transition duration-500 group-hover:scale-[1.01]'}`}>
                   <img
                     alt={photo.alt}
-                    className="h-auto w-full transition duration-500 group-hover:scale-[1.02]"
+                    className={`h-auto w-full ${isIOS ? '' : 'transition duration-500 group-hover:scale-[1.02]'}`}
                     loading="lazy"
                     src={photo.src}
                   />
@@ -992,9 +1085,9 @@ function App() {
               </button>
             ))}
           </div>
-        </motion.section>
+        </MSection>
 
-        <motion.section
+        <MSection
           {...sectionMotionProps}
           className="section-card section-card-heart mt-20"
           id="blessings"
@@ -1054,7 +1147,7 @@ function App() {
             {blessings.map((entry, index) => {
               const canEdit = Boolean(entry.editable) || ownedBlessingIds.includes(entry.id)
               return (
-              <motion.div
+              <MDiv
                 key={entry.id ?? `${entry.name}-${index}`}
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl border border-[#ffb1d1] bg-[#fff9fd] p-4 shadow-md"
@@ -1072,7 +1165,7 @@ function App() {
                     Edit
                   </button>
                 )}
-              </motion.div>
+              </MDiv>
               )
             })}
           </div>
@@ -1088,9 +1181,9 @@ function App() {
               </button>
             </div>
           )}
-        </motion.section>
+        </MSection>
 
-        <motion.section
+        <MSection
           {...sectionMotionProps}
           className="section-card section-card-heart mt-20 mb-6 md:mb-8"
           id="location"
@@ -1118,10 +1211,10 @@ function App() {
             <p className="text-sm leading-relaxed text-[#8a3a62]">5 mins from Reliance Mall</p>
             <p className="text-sm leading-relaxed text-[#8a3a62]">Parking available</p>
           </div>
-        </motion.section>
+        </MSection>
       </main>
 
-      <motion.footer
+      <MFooter
         className="relative overflow-hidden border-t border-[#ff8fbc80] bg-[#fff1f7] px-4 py-6 text-center md:py-8"
         initial={{ opacity: 0, y: 18 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -1134,7 +1227,7 @@ function App() {
             ✨ With love, families invite you to celebrate
           </p>
         </div>
-      </motion.footer>
+      </MFooter>
 
       {activeImage && (
         <div
@@ -1152,7 +1245,7 @@ function App() {
           >
             <FaChevronLeft />
           </button>
-          <motion.div
+          <MDiv
             animate={{ scale: 1, opacity: 1 }}
             className="max-w-[92vw] text-center"
             initial={{ scale: 0.93, opacity: 0 }}
@@ -1164,7 +1257,7 @@ function App() {
               src={activeImage.src}
             />
             <p className="mt-3 text-lg text-white">{activeImage.caption}</p>
-          </motion.div>
+          </MDiv>
           <button
             className="absolute right-5 top-1/2 -translate-y-1/2 rounded-full bg-white/20 p-3 text-white"
             onClick={(event) => {
