@@ -269,9 +269,13 @@ select {
     scroll-behavior: auto;
   }
 
-  .petals-layer,
-  .hearts-float {
+  .petals-layer {
     display: none;
+  }
+
+  .hearts-float-ios span {
+    text-shadow: none;
+    opacity: 0.55;
   }
 
   .backdrop-blur-sm {

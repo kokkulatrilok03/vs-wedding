@@ -218,7 +218,17 @@ function App() {
   const [isMuted] = useState(false)
   const [musicSourceIndex, setMusicSourceIndex] = useState(0)
   const isSmallScreen = screenSize.width < 768
-  const useLiteMotion = prefersReducedMotion || isIOSDevice
+  const useLiteMotion = prefersReducedMotion
+  const useInViewSafeMode = prefersReducedMotion || isIOSDevice
+  const confettiPieces = isIOSDevice ? 72 : 140
+  const visibleFloatingHearts = useMemo(() => {
+    if (!isIOSDevice) return floatingHearts
+    return floatingHearts.slice(0, 5).map((heart) => ({
+      ...heart,
+      size: `${Math.max(16, Number.parseInt(heart.size, 10) - 4)}px`,
+      duration: `${Number.parseInt(heart.duration, 10) + 10}s`,
+    }))
+  }, [isIOSDevice])
 
   const audioRef = useRef(null)
   const hasTriggeredArrivalRef = useRef(false)
@@ -510,7 +520,7 @@ function App() {
     visible: { opacity: 1, y: 0 },
   }
   const sectionTransition = { duration: 0.5, ease: 'easeOut' }
-  const sectionMotionProps = useLiteMotion
+  const sectionMotionProps = useInViewSafeMode
     ? {
         initial: false,
         animate: 'visible',
@@ -597,7 +607,7 @@ function App() {
 
   return (
     <div className="relative flex flex-col overflow-x-hidden bg-[#fff1f7] pb-0 font-sans text-[#7a2e57]">
-      {showConfetti && <Confetti width={screenSize.width} height={screenSize.height} numberOfPieces={140} recycle={false} />}
+      {showConfetti && <Confetti width={screenSize.width} height={screenSize.height} numberOfPieces={confettiPieces} recycle={false} />}
       <audio
         ref={audioRef}
         loop
@@ -643,13 +653,13 @@ function App() {
         </motion.div>
       )}
 
-      {!useLiteMotion && (
+      {!prefersReducedMotion && (
         <>
           <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
             <div className="petals-layer" />
           </div>
-          <div aria-hidden="true" className="hearts-float">
-            {floatingHearts.map((heart, index) => (
+          <div aria-hidden="true" className={`hearts-float${isIOSDevice ? ' hearts-float-ios' : ''}`}>
+            {visibleFloatingHearts.map((heart, index) => (
               <span
                 key={`${heart.left}-${heart.delay}-${index}`}
                 style={{
