@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import Confetti from 'react-confetti'
 import {
   FaBars,
@@ -180,10 +180,8 @@ function App() {
     const isTouchMac = platform === 'MacIntel' && maxTouchPoints > 1
     return isIOSLike || isTouchMac
   }, [])
-  const { scrollY, scrollYProgress } = useScroll()
-  const heroY = useTransform(scrollY, [0, 600], [0, -110])
-  const heroScale = useTransform(scrollY, [0, 500], [1.05, 1.15])
-  const progressScaleX = useSpring(scrollYProgress, { stiffness: 90, damping: 28, mass: 0.3 })
+  const isIOS = isIOSDevice
+  const safeMode = prefersReducedMotion || isIOS
 
   const [timeLeft, setTimeLeft] = useState(getTimeLeft())
   const [isIntroOpen, setIsIntroOpen] = useState(true)
@@ -219,11 +217,11 @@ function App() {
   const [isMuted] = useState(false)
   const [musicSourceIndex, setMusicSourceIndex] = useState(0)
   const isSmallScreen = screenSize.width < 768
-  const usePerformanceMode = prefersReducedMotion || isIOSDevice
+  const usePerformanceMode = safeMode
   const useLiteMotion = usePerformanceMode
   const useInViewSafeMode = usePerformanceMode
-  const confettiPieces = isIOSDevice ? 36 : 140
-  const confettiDurationMs = isIOSDevice ? 2600 : 6000
+  const confettiPieces = isIOSDevice ? 24 : 140
+  const confettiDurationMs = isIOSDevice ? 2200 : 6000
   const visibleFloatingHearts = useMemo(() => {
     if (!isIOSDevice) return floatingHearts
     return floatingHearts.slice(0, 3).map((heart) => ({
@@ -317,58 +315,38 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const allSections = [...primaryNav, ...extraNav]
-    let rafId = 0
-    let throttleTimer = 0
-    let ticking = false
+    const sections = [...primaryNav, ...extraNav]
+      .map(({ id }) => document.getElementById(id))
+      .filter(Boolean)
+    if (!sections.length) return
 
-    const updateActive = () => {
-      const viewportCenter = window.scrollY + window.innerHeight * 0.35
-      let bestId = 'hero'
-      let bestDist = Number.POSITIVE_INFINITY
-      for (const { id } of allSections) {
-        const el = document.getElementById(id)
-        if (!el) continue
-        const rect = el.getBoundingClientRect()
-        const elCenter = window.scrollY + rect.top + rect.height / 2
-        const d = Math.abs(elCenter - viewportCenter)
-        if (d < bestDist) {
-          bestDist = d
-          bestId = id
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let topEntry = null
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          if (!topEntry || entry.intersectionRatio > topEntry.intersectionRatio) {
+            topEntry = entry
+          }
         }
-      }
-      setActiveNavId((prev) => (prev === bestId ? prev : bestId))
-      setIsNavElevated((prev) => {
-        const next = window.scrollY > 20
-        return prev === next ? prev : next
-      })
-      ticking = false
-    }
+        if (!topEntry) return
+        const nextId = topEntry.target.id
+        setActiveNavId((prev) => (prev === nextId ? prev : nextId))
+      },
+      {
+        root: null,
+        rootMargin: '-30% 0px -50% 0px',
+        threshold: [0.1, 0.25, 0.4, 0.6],
+      },
+    )
 
-    const onScroll = () => {
-      if (isIOSDevice) {
-        if (throttleTimer) return
-        throttleTimer = window.setTimeout(() => {
-          throttleTimer = 0
-          updateActive()
-        }, 120)
-        return
-      }
-      if (ticking) return
-      ticking = true
-      rafId = window.requestAnimationFrame(updateActive)
-    }
+    sections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
+  }, [])
 
-    updateActive()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
-      window.cancelAnimationFrame(rafId)
-      if (throttleTimer) window.clearTimeout(throttleTimer)
-    }
-  }, [isIOSDevice])
+  useEffect(() => {
+    setIsNavElevated(activeNavId !== 'hero')
+  }, [activeNavId])
 
   const fetchBlessings = useCallback(async (page = 1, append = false) => {
     if (!append && blessingsRetryTimerRef.current) {
@@ -553,6 +531,14 @@ function App() {
   const hasArrived = Object.values(timeLeft).every((value) => value === 0)
   const welcomeText = guestName ? `Welcome, ${guestName} 💖` : 'Welcome, Dear Guest 💖'
   const heroImage = isSmallScreen ? couplePhotos.heroMobile : couplePhotos.hero
+  const heroMotionStyle = isIOS
+    ? {
+        scale: 1.03,
+        backgroundImage: `linear-gradient(rgba(67,18,43,0.35), rgba(67,18,43,0.58)), url('${heroImage}')`,
+      }
+    : {
+        backgroundImage: `linear-gradient(rgba(67,18,43,0.35), rgba(67,18,43,0.58)), url('${heroImage}')`,
+      }
   const handleNavClick = (event, id) => {
     event.preventDefault()
     const target = document.getElementById(id)
@@ -653,12 +639,14 @@ function App() {
             initial={{ scale: 1.08, opacity: 0.6 }}
             style={{
               backgroundImage: `linear-gradient(rgba(74, 16, 48, 0.48), rgba(74, 16, 48, 0.68)), url('${heroImage}')`,
-              filter: 'blur(4px)',
+              filter: isIOS ? 'none' : 'blur(4px)',
             }}
           />
           <motion.div
             animate={{ y: 0, opacity: 1 }}
-            className="relative z-10 w-full max-w-xl rounded-3xl border border-[#ffd2e7] bg-white/82 px-8 py-10 text-center shadow-[0_16px_36px_rgba(74,16,48,0.2)] backdrop-blur-sm md:px-12"
+            className={`relative z-10 w-full max-w-xl rounded-3xl border border-[#ffd2e7] bg-white/82 px-8 py-10 text-center shadow-[0_16px_36px_rgba(74,16,48,0.2)] md:px-12 ${
+              isIOS ? '' : 'backdrop-blur-sm'
+            }`}
             initial={{ y: 30, opacity: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
@@ -677,7 +665,7 @@ function App() {
         </motion.div>
       )}
 
-      {!prefersReducedMotion && (
+      {!safeMode && (
         <>
           <div className={`pointer-events-none absolute inset-0 overflow-hidden opacity-40${isIOSDevice ? ' ios-petals-layer' : ''}`}>
             <div className="petals-layer" />
@@ -709,7 +697,7 @@ function App() {
       >
         <motion.div
           className="pointer-events-none absolute top-0 left-0 h-[2px] w-full origin-left rounded-full bg-gradient-to-r from-[#ff7eb6] via-[#ff5ea1] to-[#c83f78]"
-          style={isIOSDevice ? undefined : { scaleX: progressScaleX }}
+          style={undefined}
         />
         <nav
           className={`pointer-events-auto flex items-center justify-between gap-3 rounded-full border px-5 py-3 transition-all duration-300 md:gap-4 md:px-6 md:py-3.5 ${
@@ -869,11 +857,10 @@ function App() {
         >
           <motion.div
             className="absolute inset-2 rounded-[2.4rem] bg-cover bg-center md:inset-3"
-            style={{
-              y: isIOSDevice ? 0 : heroY,
-              scale: isIOSDevice ? 1.03 : heroScale,
-              backgroundImage: `linear-gradient(rgba(67,18,43,0.35), rgba(67,18,43,0.58)), url('${heroImage}')`,
-            }}
+            animate={isIOS ? { opacity: 1 } : undefined}
+            initial={isIOS ? { opacity: 0.92 } : undefined}
+            transition={isIOS ? { duration: 0.45, ease: 'easeOut' } : undefined}
+            style={heroMotionStyle}
           />
           <div className="pointer-events-none absolute inset-2 rounded-[2.4rem] border border-[#ffd7e9] shadow-[0_14px_28px_rgba(145,41,93,0.16)] md:inset-3" />
           <div className="relative z-10 rounded-2xl bg-black/30 px-4 py-2">
@@ -1205,7 +1192,7 @@ function App() {
   )
 }
 
-function Detail({ icon, label, value }) {
+const Detail = memo(function Detail({ icon, label, value }) {
   return (
     <div className="rounded-2xl border border-[#ff8fbc40] bg-white/80 p-6 text-center shadow-md transition hover:shadow-lg">
       <p className="flex items-center justify-center gap-1 text-xs uppercase tracking-[0.2em] text-[#8a3a62]">
@@ -1215,9 +1202,9 @@ function Detail({ icon, label, value }) {
       <p className="mt-3 font-serif text-2xl font-semibold tracking-wide text-gray-900">{value}</p>
     </div>
   )
-}
+})
 
-function BlessingCard({ title, names }) {
+const BlessingCard = memo(function BlessingCard({ title, names }) {
   return (
     <div className="rounded-2xl border border-[#ff8fbc40] bg-white/80 p-6 text-center shadow-md transition hover:shadow-lg">
       <h3 className="font-serif text-[1.6rem] font-semibold tracking-wide text-gray-900">🌿 {title}</h3>
@@ -1230,9 +1217,9 @@ function BlessingCard({ title, names }) {
       </div>
     </div>
   )
-}
+})
 
-function Input({ label, ...props }) {
+const Input = memo(function Input({ label, ...props }) {
   return (
     <label className="text-left text-sm leading-relaxed text-[#8a3a62]" htmlFor={props.name}>
       {label}
@@ -1243,6 +1230,6 @@ function Input({ label, ...props }) {
       />
     </label>
   )
-}
+})
 
 export default App

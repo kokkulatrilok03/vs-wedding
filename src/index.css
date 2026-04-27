@@ -273,6 +273,10 @@ select {
     display: none;
   }
 
+  .hearts-float {
+    display: none;
+  }
+
   .hearts-float-ios span {
     text-shadow: none;
     opacity: 0.5;
